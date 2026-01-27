@@ -1,0 +1,33 @@
+import { Routes, Route } from 'react-router-dom'
+import RootLayout from '@/components/layout/RootLayout'
+import DashboardPage from '@/pages/dashboard/page'
+import CalendarPage from '@/pages/calendar/page'
+import TrainingPlanPage from '@/pages/training-plan/page'
+import UsersPage from '@/pages/admin/users/page'
+import EntriesPage from '@/pages/admin/entries/page'
+import TopicsPage from '@/pages/admin/topics/page'
+import TrainingPlansPage from '@/pages/admin/training-plans/page'
+import LeavePage from '@/pages/admin/leave/page'
+import HomePage from '@/pages/page'
+
+function App() {
+    return (
+        <RootLayout>
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/training-plan" element={<TrainingPlanPage />} />
+
+                {/* Admin Routes */}
+                <Route path="/admin/users" element={<UsersPage />} />
+                <Route path="/admin/entries" element={<EntriesPage />} />
+                <Route path="/admin/topics" element={<TopicsPage />} />
+                <Route path="/admin/training-plans" element={<TrainingPlansPage />} />
+                <Route path="/admin/leave" element={<LeavePage />} />
+            </Routes>
+        </RootLayout>
+    )
+}
+
+export default App

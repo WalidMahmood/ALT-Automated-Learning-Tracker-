@@ -1,0 +1,449 @@
+import type {
+  User,
+  Topic,
+  Entry,
+  TrainingPlan,
+  LeaveRequest,
+} from './types'
+
+// Mock Users
+export const mockUsers: User[] = [
+  {
+    id: 1,
+    email: 'john.doe@brainstation-23.com',
+    name: 'John Doe',
+    github_url: 'https://github.com/johndoe',
+    experience_years: 1.5,
+    tech_stack: ['React', 'TypeScript', 'Node.js'],
+    role: 'learner',
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    email: 'jane.smith@brainstation-23.com',
+    name: 'Jane Smith',
+    github_url: 'https://github.com/janesmith',
+    experience_years: 3,
+    tech_stack: ['Python', 'Django', 'PostgreSQL'],
+    role: 'learner',
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 3,
+    email: 'admin@brainstation-23.com',
+    name: 'Admin User',
+    github_url: null,
+    experience_years: 8,
+    tech_stack: ['Full Stack'],
+    role: 'admin',
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 4,
+    email: 'mike.wilson@brainstation-23.com',
+    name: 'Mike Wilson',
+    github_url: 'https://github.com/mikewilson',
+    experience_years: 0.5,
+    tech_stack: ['JavaScript', 'HTML', 'CSS'],
+    role: 'learner',
+    is_active: true,
+    created_at: '2026-01-05T00:00:00Z',
+    updated_at: '2026-01-05T00:00:00Z',
+  },
+]
+
+// Mock Topics (Hierarchical)
+export const mockTopics: Topic[] = [
+  // Root Topics
+  {
+    id: 1,
+    name: 'Frontend Development',
+    parent_id: null,
+    depth: 0,
+    difficulty: 3,
+    benchmark_hours: 40,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    name: 'Backend Development',
+    parent_id: null,
+    depth: 0,
+    difficulty: 4,
+    benchmark_hours: 50,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 3,
+    name: 'DevOps',
+    parent_id: null,
+    depth: 0,
+    difficulty: 4,
+    benchmark_hours: 30,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  // Frontend Children
+  {
+    id: 4,
+    name: 'React',
+    parent_id: 1,
+    depth: 1,
+    difficulty: 3,
+    benchmark_hours: 20,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 5,
+    name: 'TypeScript',
+    parent_id: 1,
+    depth: 1,
+    difficulty: 3,
+    benchmark_hours: 15,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 6,
+    name: 'CSS & Tailwind',
+    parent_id: 1,
+    depth: 1,
+    difficulty: 2,
+    benchmark_hours: 10,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  // React Children (Leaf nodes)
+  {
+    id: 7,
+    name: 'React Hooks',
+    parent_id: 4,
+    depth: 2,
+    difficulty: 3,
+    benchmark_hours: 8,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 8,
+    name: 'React Redux',
+    parent_id: 4,
+    depth: 2,
+    difficulty: 4,
+    benchmark_hours: 10,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 9,
+    name: 'React Router',
+    parent_id: 4,
+    depth: 2,
+    difficulty: 2,
+    benchmark_hours: 5,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  // Backend Children
+  {
+    id: 10,
+    name: 'Python',
+    parent_id: 2,
+    depth: 1,
+    difficulty: 3,
+    benchmark_hours: 25,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 11,
+    name: 'Django',
+    parent_id: 2,
+    depth: 1,
+    difficulty: 4,
+    benchmark_hours: 20,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 12,
+    name: 'PostgreSQL',
+    parent_id: 2,
+    depth: 1,
+    difficulty: 3,
+    benchmark_hours: 15,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  // DevOps Children
+  {
+    id: 13,
+    name: 'Docker',
+    parent_id: 3,
+    depth: 1,
+    difficulty: 4,
+    benchmark_hours: 15,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 14,
+    name: 'GitHub Actions',
+    parent_id: 3,
+    depth: 1,
+    difficulty: 3,
+    benchmark_hours: 8,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+]
+
+// Mock Entries
+export const mockEntries: Entry[] = [
+  {
+    id: 1,
+    user_id: 1,
+    date: '2026-01-20',
+    topic_id: 7,
+    hours: 4.5,
+    learned_text:
+      'Learned about useState and useEffect hooks. Spent extra time debugging a stale closure issue which took longer than expected.',
+    blockers_text: 'Technical: Had issues understanding the dependency array in useEffect',
+    ai_status: 'analyzed',
+    ai_decision: 'approve',
+    ai_confidence: 85,
+    ai_reasoning:
+      'Time spent (4.5h) is within acceptable range for React Hooks topic (benchmark: 8h). User mentioned debugging stale closure issues which justifies additional time. Experience (1.5 yrs) suggests a fresher, so variance is acceptable.',
+    ai_analyzed_at: '2026-01-20T18:00:00Z',
+    status: 'approved',
+    admin_override: false,
+    override_reason: null,
+    override_comment: null,
+    override_at: null,
+    admin_id: null,
+    extra_learning: [],
+    created_at: '2026-01-20T17:00:00Z',
+    updated_at: '2026-01-20T18:00:00Z',
+  },
+  {
+    id: 2,
+    user_id: 1,
+    date: '2026-01-21',
+    topic_id: 8,
+    hours: 6,
+    learned_text:
+      'Started learning Redux. Covered actions, reducers, and store setup. The concepts were quite complex.',
+    blockers_text: null,
+    ai_status: 'analyzed',
+    ai_decision: 'flag',
+    ai_confidence: 65,
+    ai_reasoning:
+      'Time spent (6h) exceeds typical daily learning for Redux introduction. However, user is a fresher (1.5 yrs exp) and Redux has a steep learning curve. Flagging for admin review to confirm if this includes hands-on practice.',
+    ai_analyzed_at: '2026-01-21T18:00:00Z',
+    status: 'flagged',
+    admin_override: false,
+    override_reason: null,
+    override_comment: null,
+    override_at: null,
+    admin_id: null,
+    extra_learning: [
+      {
+        id: 1,
+        entry_id: 2,
+        activity_name: 'Redux Toolkit Documentation',
+        hours: 1.5,
+        description: 'Read through official Redux Toolkit docs and examples',
+        blockers_text: null,
+        sequence_order: 1,
+        created_at: '2026-01-21T17:00:00Z',
+      },
+    ],
+    created_at: '2026-01-21T17:00:00Z',
+    updated_at: '2026-01-21T18:00:00Z',
+  },
+  {
+    id: 3,
+    user_id: 2,
+    date: '2026-01-20',
+    topic_id: 11,
+    hours: 3,
+    learned_text:
+      'Worked on Django models and ORM queries. Built a simple CRUD API.',
+    blockers_text: null,
+    ai_status: 'analyzed',
+    ai_decision: 'approve',
+    ai_confidence: 92,
+    ai_reasoning:
+      'Time spent (3h) is efficient for Django model work given user experience (3 yrs). Well within benchmark hours. No flags.',
+    ai_analyzed_at: '2026-01-20T18:00:00Z',
+    status: 'approved',
+    admin_override: false,
+    override_reason: null,
+    override_comment: null,
+    override_at: null,
+    admin_id: null,
+    extra_learning: [],
+    created_at: '2026-01-20T17:00:00Z',
+    updated_at: '2026-01-20T18:00:00Z',
+  },
+  {
+    id: 4,
+    user_id: 4,
+    date: '2026-01-21',
+    topic_id: 6,
+    hours: 8,
+    learned_text:
+      'Spent the entire day on CSS and Tailwind. Had to redo my project styling multiple times.',
+    blockers_text: 'Environmental: VSCode extensions were not working properly',
+    ai_status: 'analyzed',
+    ai_decision: 'reject',
+    ai_confidence: 78,
+    ai_reasoning:
+      'Time spent (8h) significantly exceeds benchmark (10h total for entire topic) for a single day. While user mentions environmental issues, the description lacks specific learning outcomes. Recommending rejection or clarification.',
+    ai_analyzed_at: '2026-01-21T18:00:00Z',
+    status: 'pending',
+    admin_override: false,
+    override_reason: null,
+    override_comment: null,
+    override_at: null,
+    admin_id: null,
+    extra_learning: [],
+    created_at: '2026-01-21T17:00:00Z',
+    updated_at: '2026-01-21T18:00:00Z',
+  },
+  {
+    id: 5,
+    user_id: 1,
+    date: '2026-01-22',
+    topic_id: 9,
+    hours: 2.5,
+    learned_text:
+      'Learned React Router basics - BrowserRouter, Routes, Route components, and navigation with Link.',
+    blockers_text: null,
+    ai_status: 'pending',
+    ai_decision: null,
+    ai_confidence: null,
+    ai_reasoning: null,
+    ai_analyzed_at: null,
+    status: 'pending',
+    admin_override: false,
+    override_reason: null,
+    override_comment: null,
+    override_at: null,
+    admin_id: null,
+    extra_learning: [],
+    created_at: '2026-01-22T12:00:00Z',
+    updated_at: '2026-01-22T12:00:00Z',
+  },
+]
+
+// Mock Training Plans
+export const mockTrainingPlans: TrainingPlan[] = [
+  {
+    id: 1,
+    plan_name: 'Frontend Fundamentals',
+    description: 'Complete frontend development track covering React, TypeScript, and modern CSS',
+    is_active: true,
+    is_archived: false,
+    plan_topics: [
+      { id: 1, plan_id: 1, topic_id: 6, sequence_order: 1, expected_hours: 10 },
+      { id: 2, plan_id: 1, topic_id: 5, sequence_order: 2, expected_hours: 15 },
+      { id: 3, plan_id: 1, topic_id: 7, sequence_order: 3, expected_hours: 8 },
+      { id: 4, plan_id: 1, topic_id: 8, sequence_order: 4, expected_hours: 10 },
+      { id: 5, plan_id: 1, topic_id: 9, sequence_order: 5, expected_hours: 5 },
+    ],
+    assignments: [
+      { id: 1, plan_id: 1, user_id: 1, assigned_by_admin_id: 3, assigned_at: '2026-01-10T00:00:00Z' },
+      { id: 2, plan_id: 1, user_id: 4, assigned_by_admin_id: 3, assigned_at: '2026-01-10T00:00:00Z' },
+    ],
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    plan_name: 'Backend with Python',
+    description: 'Complete backend development track with Python, Django, and PostgreSQL',
+    is_active: true,
+    is_archived: false,
+    plan_topics: [
+      { id: 6, plan_id: 2, topic_id: 10, sequence_order: 1, expected_hours: 25 },
+      { id: 7, plan_id: 2, topic_id: 11, sequence_order: 2, expected_hours: 20 },
+      { id: 8, plan_id: 2, topic_id: 12, sequence_order: 3, expected_hours: 15 },
+    ],
+    assignments: [
+      { id: 3, plan_id: 2, user_id: 2, assigned_by_admin_id: 3, assigned_at: '2026-01-10T00:00:00Z' },
+      { id: 4, plan_id: 2, user_id: 1, assigned_by_admin_id: 3, assigned_at: '2026-01-10T00:00:00Z' },
+    ],
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+]
+
+// Mock Leave Requests
+export const mockLeaveRequests: LeaveRequest[] = [
+  {
+    id: 1,
+    user_id: 1,
+    start_date: '2026-01-25',
+    end_date: '2026-01-26',
+    status: 'pending',
+    admin_id: null,
+    admin_comment: null,
+    requested_at: '2026-01-20T10:00:00Z',
+    reviewed_at: null,
+  },
+  {
+    id: 2,
+    user_id: 2,
+    start_date: '2026-01-18',
+    end_date: '2026-01-18',
+    status: 'approved',
+    admin_id: 3,
+    admin_comment: 'Approved for personal reasons',
+    requested_at: '2026-01-15T10:00:00Z',
+    reviewed_at: '2026-01-16T09:00:00Z',
+  },
+]
+
+// Helper function to get topic by ID
+export function getTopicById(id: number): Topic | undefined {
+  return mockTopics.find((t) => t.id === id)
+}
+
+// Helper function to get user by ID
+export function getUserById(id: number): User | undefined {
+  return mockUsers.find((u) => u.id === id)
+}
+
+// Helper function to check if topic is a leaf node
+export function isLeafTopic(topicId: number): boolean {
+  return !mockTopics.some((t) => t.parent_id === topicId)
+}
+
+// Get leaf topics only
+export function getLeafTopics(): Topic[] {
+  return mockTopics.filter((t) => isLeafTopic(t.id))
+}
