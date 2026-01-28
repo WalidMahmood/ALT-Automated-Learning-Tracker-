@@ -1,11 +1,10 @@
 'use client'
 
-import React from "react"
-
-import { useState } from 'react'
+import React, { useState } from "react"
+import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks'
+import api from '@/lib/api'
 import { loginStart, loginSuccess, loginFailure } from '@/lib/store/slices/authSlice'
-import { mockUsers } from '@/lib/mock-data'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export function LoginForm() {
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const { isLoading, error } = useAppSelector((state) => state.auth)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,28 +23,40 @@ export function LoginForm() {
     e.preventDefault()
     dispatch(loginStart())
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const response = await api.post('/users/auth/login/', {
+        email,
+        password,
+      })
 
-    // Mock authentication - find user by email
-    const user = mockUsers.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.is_active
-    )
+      const { user, access, refresh } = response.data
+      dispatch(loginSuccess({ user, access, refresh }))
 
-    if (user) {
-      dispatch(loginSuccess(user))
-    } else {
-      dispatch(loginFailure('Invalid email or password. Please try again.'))
-    }
-  }
+      // Role-based redirection
+      if (user.role === 'admin') {
+        navigate('/admin/users')
+      } else {
+        navigate('/dashboard')
+      }
+    } catch (err: any) {
+      console.error('Login error:', err)
 
-  const handleDemoLogin = async (role: 'learner' | 'admin') => {
-    dispatch(loginStart())
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    
-    const user = mockUsers.find((u) => u.role === role && u.is_active)
-    if (user) {
-      dispatch(loginSuccess(user))
+      let errorMessage = 'An unexpected error occurred.'
+
+      if (!err.response) {
+        // Network error (server down, CORS, etc.)
+        errorMessage = 'Unable to connect to the server. Please check if the backend is running.'
+      } else if (err.response.status === 401 || err.response.status === 400) {
+        // Validation/Auth error
+        errorMessage = err.response.data.non_field_errors?.[0] ||
+          err.response.data.detail ||
+          'Invalid email or password.'
+      } else {
+        // Other server errors
+        errorMessage = `Server Error (${err.response.status}). Please try again later.`
+      }
+
+      dispatch(loginFailure(errorMessage))
     }
   }
 
@@ -130,26 +142,15 @@ export function LoginForm() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  Demo Access
+                  Official Access
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => handleDemoLogin('learner')}
-                disabled={isLoading}
-              >
-                Learner Demo
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDemoLogin('admin')}
-                disabled={isLoading}
-              >
-                Admin Demo
-              </Button>
+            <div className="grid grid-cols-1 gap-3">
+              <p className="text-sm text-center text-muted-foreground">
+                Please use your official Brain Station 23 email.
+              </p>
             </div>
           </CardContent>
         </Card>

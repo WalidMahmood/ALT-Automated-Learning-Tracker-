@@ -2,6 +2,7 @@
 
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks'
 import { logout } from '@/lib/store/slices/authSlice'
+import api from '@/lib/api'
 import { toggleTheme, toggleSidebar, setLeaveModalOpen } from '@/lib/store/slices/uiSlice'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,11 +30,13 @@ export function AppHeader() {
   const { user } = useAppSelector((state) => state.auth)
   const { theme } = useAppSelector((state) => state.ui)
 
-  const initials = user?.name
+  const displayName = user?.name || user?.email || 'User'
+  const initials = displayName
     .split(' ')
     .map((n) => n[0])
     .join('')
     .toUpperCase()
+    .slice(0, 2)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card">
@@ -101,7 +104,7 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.name}</p>
+                <p className="text-sm font-medium leading-none">{displayName}</p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {user?.email}
                 </p>
@@ -124,7 +127,18 @@ export function AppHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => dispatch(logout())}
+              onClick={async () => {
+                try {
+                  const refreshToken = localStorage.getItem('refreshToken')
+                  if (refreshToken) {
+                    await api.post('/users/auth/logout/', { refresh: refreshToken })
+                  }
+                } catch (err) {
+                  console.error('Logout error:', err)
+                } finally {
+                  dispatch(logout())
+                }
+              }}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out

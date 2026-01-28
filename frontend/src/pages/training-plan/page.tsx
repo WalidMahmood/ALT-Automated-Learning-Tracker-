@@ -1,6 +1,6 @@
 
 import { useMemo, useState } from 'react'
-import { AppLayout } from '@/components/layout/app-layout'
+
 import { useAppSelector } from '@/lib/store/hooks'
 import { Navigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -24,11 +24,7 @@ import { mockTrainingPlans, mockTopics, mockEntries } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
 
 export default function TrainingPlanPage() {
-  return (
-    <AppLayout>
-      <TrainingPlanContent />
-    </AppLayout>
-  )
+  return <TrainingPlanContent />
 }
 
 function TrainingPlanContent() {

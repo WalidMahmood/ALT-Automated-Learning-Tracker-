@@ -1,6 +1,6 @@
 
 import { useState, useMemo, useEffect } from 'react'
-import { AppLayout } from '@/components/layout/app-layout'
+
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -144,204 +144,202 @@ export default function TopicsPage() {
     }
 
     return (
-        <AppLayout>
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Topic Management</h1>
-                        <p className="text-muted-foreground">
-                            Create and manage learning topics and their benchmarks
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Button onClick={() => setIsDialogOpen(true)} size="sm" className="h-9">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Topic
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Topic Management</h1>
+                    <p className="text-muted-foreground">
+                        Create and manage learning topics and their benchmarks
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button onClick={() => setIsDialogOpen(true)} size="sm" className="h-9">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Topic
+                    </Button>
+                    <div className="flex items-center gap-2 border rounded-md p-1 h-9 bg-background">
+                        <Button
+                            variant={isFlatView ? 'ghost' : 'secondary'}
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setIsFlatView(false)}
+                        >
+                            <ChevronRight className="mr-1 h-3 w-3" />
+                            Tree
                         </Button>
-                        <div className="flex items-center gap-2 border rounded-md p-1 h-9 bg-background">
-                            <Button
-                                variant={isFlatView ? 'ghost' : 'secondary'}
-                                size="sm"
-                                className="h-7 px-2 text-xs"
-                                onClick={() => setIsFlatView(false)}
-                            >
-                                <ChevronRight className="mr-1 h-3 w-3" />
-                                Tree
-                            </Button>
-                            <Button
-                                variant={isFlatView ? 'secondary' : 'ghost'}
-                                size="sm"
-                                className="h-7 px-2 text-xs"
-                                onClick={() => setIsFlatView(true)}
-                            >
-                                <Filter className="mr-1 h-3 w-3" />
-                                Flat
-                            </Button>
-                        </div>
+                        <Button
+                            variant={isFlatView ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setIsFlatView(true)}
+                        >
+                            <Filter className="mr-1 h-3 w-3" />
+                            Flat
+                        </Button>
                     </div>
                 </div>
+            </div>
 
-                <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-wrap items-center gap-4">
-                                <div className="relative flex-1 min-w-[300px]">
-                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search topics..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-8 bg-background/50"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-
-                                    <Select value={parentFilter} onValueChange={setParentFilter}>
-                                        <SelectTrigger className="w-[180px] h-9">
-                                            <SelectValue placeholder="Root Category" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Categories</SelectItem>
-                                            {rootTopics.map(t => (
-                                                <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="relative flex-1 min-w-[300px]">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search topics..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-8 bg-background/50"
+                                />
                             </div>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground px-1">
-                                <span>Showing {displayTopics.length} of {topics.length} topics</span>
-                                <div className="flex items-center gap-1">
-                                    <span className="h-2 w-2 rounded-full bg-primary" />
-                                    <span>Root Topic</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <CornerDownRight className="h-3 w-3" />
-                                    <span>Sub-topic</span>
-                                </div>
+                            <div className="flex items-center gap-2">
+
+                                <Select value={parentFilter} onValueChange={setParentFilter}>
+                                    <SelectTrigger className="w-[180px] h-9">
+                                        <SelectValue placeholder="Root Category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Categories</SelectItem>
+                                        {rootTopics.map(t => (
+                                            <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Topic Name</TableHead>
-                                        <TableHead>Benchmark (Hours)</TableHead>
-                                        <TableHead>Usage Stats</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {displayTopics.map((topic) => {
-                                        const topicEntries = mockEntries.filter(e => e.topic_id === topic.id)
-                                        const totalHours = topicEntries.reduce((sum, e) => sum + e.hours, 0)
-                                        const parent = mockTopics.find(t => t.id === topic.parent_id)
-                                        const isExpanded = expandedNodes.has(topic.id)
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground px-1">
+                            <span>Showing {displayTopics.length} of {topics.length} topics</span>
+                            <div className="flex items-center gap-1">
+                                <span className="h-2 w-2 rounded-full bg-primary" />
+                                <span>Root Topic</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <CornerDownRight className="h-3 w-3" />
+                                <span>Sub-topic</span>
+                            </div>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Topic Name</TableHead>
+                                    <TableHead>Benchmark (Hours)</TableHead>
+                                    <TableHead>Usage Stats</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {displayTopics.map((topic) => {
+                                    const topicEntries = mockEntries.filter(e => e.topic_id === topic.id)
+                                    const totalHours = topicEntries.reduce((sum, e) => sum + e.hours, 0)
+                                    const parent = mockTopics.find(t => t.id === topic.parent_id)
+                                    const isExpanded = expandedNodes.has(topic.id)
 
-                                        return (
-                                            <TableRow
-                                                key={topic.id}
-                                                className={cn(
-                                                    !topic.is_active && "opacity-60 grayscale-[0.5]",
-                                                    topic.level > 0 && "bg-muted/5 border-l-2 border-l-muted-foreground/10",
-                                                    topic.hasChildren && !searchQuery && "cursor-pointer hover:bg-muted/50"
-                                                )}
-                                                onClick={() => topic.hasChildren && !searchQuery && toggleNode(topic.id)}
-                                            >
-                                                <TableCell className="font-medium">
-                                                    <div className="flex items-center gap-2">
-                                                        <div style={{ marginLeft: `${topic.level * 24}px` }} className="flex items-center gap-2">
-                                                            {topic.hasChildren && !searchQuery ? (
-                                                                <div className="h-6 w-6 flex items-center justify-center">
-                                                                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                    return (
+                                        <TableRow
+                                            key={topic.id}
+                                            className={cn(
+                                                !topic.is_active && "opacity-60 grayscale-[0.5]",
+                                                topic.level > 0 && "bg-muted/5 border-l-2 border-l-muted-foreground/10",
+                                                topic.hasChildren && !searchQuery && "cursor-pointer hover:bg-muted/50"
+                                            )}
+                                            onClick={() => topic.hasChildren && !searchQuery && toggleNode(topic.id)}
+                                        >
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    <div style={{ marginLeft: `${topic.level * 24}px` }} className="flex items-center gap-2">
+                                                        {topic.hasChildren && !searchQuery ? (
+                                                            <div className="h-6 w-6 flex items-center justify-center">
+                                                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="w-6" />
+                                                        )}
+
+                                                        <div className="flex items-center gap-2">
+                                                            {topic.level > 0 && (
+                                                                <div className="flex items-center text-muted-foreground/50">
+                                                                    <CornerDownRight className="h-4 w-4" />
                                                                 </div>
-                                                            ) : (
-                                                                <div className="w-6" />
                                                             )}
-
-                                                            <div className="flex items-center gap-2">
-                                                                {topic.level > 0 && (
-                                                                    <div className="flex items-center text-muted-foreground/50">
-                                                                        <CornerDownRight className="h-4 w-4" />
-                                                                    </div>
-                                                                )}
-                                                                <BookOpen className={cn("h-4 w-4", topic.level === 0 ? "text-primary" : "text-muted-foreground")} />
-                                                                <div className="flex flex-col">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span>{topic.name}</span>
-                                                                        {!topic.is_active && <Badge variant="outline" className="text-[9px] py-0 h-4 uppercase tracking-wider">Inactive</Badge>}
-                                                                    </div>
-                                                                    {(topic.path || (parent && !isExpanded && searchQuery)) && (
-                                                                        <span className="text-[10px] text-muted-foreground uppercase">
-                                                                            {topic.path ? `In ${topic.path}` : `Part of ${parent?.name}`}
-                                                                        </span>
-                                                                    )}
+                                                            <BookOpen className={cn("h-4 w-4", topic.level === 0 ? "text-primary" : "text-muted-foreground")} />
+                                                            <div className="flex flex-col">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span>{topic.name}</span>
+                                                                    {!topic.is_active && <Badge variant="outline" className="text-[9px] py-0 h-4 uppercase tracking-wider">Inactive</Badge>}
                                                                 </div>
+                                                                {(topic.path || (parent && !isExpanded && searchQuery)) && (
+                                                                    <span className="text-[10px] text-muted-foreground uppercase">
+                                                                        {topic.path ? `In ${topic.path}` : `Part of ${parent?.name}`}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell>{topic.benchmark_hours}h</TableCell>
-                                                <TableCell>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {topicEntries.length} entries / {totalHours}h logged
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                className="h-8 w-8 p-0"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <span className="sr-only">Open menu</span>
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(topic); }}>
-                                                                <Pencil className="mr-2 h-4 w-4" />
-                                                                Edit
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem
-                                                                className="text-destructive"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation()
-                                                                    handleDelete(topic.id)
-                                                                }}
-                                                            >
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{topic.benchmark_hours}h</TableCell>
+                                            <TableCell>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {topicEntries.length} entries / {totalHours}h logged
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(topic); }}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className="text-destructive"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleDelete(topic.id)
+                                                            }}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
 
-                <TopicDialog
-                    open={isDialogOpen}
-                    onOpenChange={(open) => {
-                        setIsDialogOpen(open)
-                        if (!open) setEditingTopic(null)
-                    }}
-                    topic={editingTopic}
-                    topics={topics}
-                    onSave={handleSave}
-                />
-            </div>
-        </AppLayout>
+            <TopicDialog
+                open={isDialogOpen}
+                onOpenChange={(open) => {
+                    setIsDialogOpen(open)
+                    if (!open) setEditingTopic(null)
+                }}
+                topic={editingTopic}
+                topics={topics}
+                onSave={handleSave}
+            />
+        </div>
     )
 }
 

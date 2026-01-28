@@ -1,6 +1,7 @@
 """
 API Views for user authentication and profile management
 """
+import logging
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,6 +18,9 @@ from .serializers import (
     TokenSerializer,
 )
 from .permissions import IsAdmin, IsOwnerOrAdmin
+from .utils import mask_email
+
+logger = logging.getLogger(__name__)
 
 
 class LoginView(APIView):
@@ -27,20 +31,27 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        serializer = LoginSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        
-        user = serializer.validated_data['user']
-        
-        # Generate JWT tokens
-        refresh = RefreshToken.for_user(user)
-        
-        # Return tokens and user profile
-        return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-            'user': UserSerializer(user).data,
-        }, status=status.HTTP_200_OK)
+        try:
+            serializer = LoginSerializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            
+            user = serializer.validated_data['user']
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            
+            # Return tokens and user profile
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': UserSerializer(user).data,
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Login failed: {str(e)}")
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class LogoutView(APIView):
@@ -51,6 +62,7 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
+        logger.info(f"LOGOUT: User {mask_email(request.user.email)} logging out")
         try:
             refresh_token = request.data.get('refresh')
             if not refresh_token:

@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import Loading from './loading'
 
 import { useState, useMemo } from 'react'
-import { AppLayout } from '@/components/layout/app-layout'
+
 import { useAppSelector } from '@/lib/store/hooks'
 import { Navigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,11 +38,9 @@ import { OverrideModal } from '@/components/admin/override-modal'
 
 export default function AdminEntriesPage() {
   return (
-    <AppLayout>
-      <Suspense fallback={<Loading />}> {/* Wrap the AdminEntriesContent component in a Suspense boundary */}
-        <AdminEntriesContent />
-      </Suspense>
-    </AppLayout>
+    <Suspense fallback={<Loading />}> {/* Wrap the AdminEntriesContent component in a Suspense boundary */}
+      <AdminEntriesContent />
+    </Suspense>
   )
 }
 

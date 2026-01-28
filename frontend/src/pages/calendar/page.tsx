@@ -1,16 +1,12 @@
 
-import { AppLayout } from '@/components/layout/app-layout'
+
 import { LearningCalendar } from '@/components/calendar/learning-calendar'
 import { EntryFormModal } from '@/components/forms/entry-form-modal'
 import { useAppSelector } from '@/lib/store/hooks'
 import { Navigate } from 'react-router-dom'
 
 export default function CalendarPage() {
-  return (
-    <AppLayout>
-      <CalendarPageContent />
-    </AppLayout>
-  )
+  return <CalendarPageContent />
 }
 
 function CalendarPageContent() {

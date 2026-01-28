@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { AppLayout } from '@/components/layout/app-layout'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -54,100 +54,98 @@ export default function LeavePage() {
     }
 
     return (
-        <AppLayout>
-            <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Review Leave</h1>
-                    <p className="text-muted-foreground">
-                        Manage learner leave entries
-                    </p>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Active Leaves</CardTitle>
-                        <CardDescription>
-                            Review and manage active leave entries
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Learner</TableHead>
-                                        <TableHead>Dates</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {activeRequests.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                                                No active leave found.
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        activeRequests.map((request) => {
-                                            const requestUser = mockUsers.find((u) => u.id === request.user_id)
-
-                                            return (
-                                                <TableRow key={request.id}>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                                            <span className="font-medium">{requestUser?.name}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3 text-muted-foreground" />
-                                                            <span>{request.start_date} to {request.end_date}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() => handleAction(request, 'edit')}
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                                onClick={() => handleAction(request, 'reject')}
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <ActionDialog
-                    open={!!selectedRequest}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setSelectedRequest(null)
-                            setActionType(null)
-                        }
-                    }}
-                    request={selectedRequest}
-                    type={actionType}
-                    onConfirm={handleConfirmAction}
-                />
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight">Review Leave</h1>
+                <p className="text-muted-foreground">
+                    Manage learner leave entries
+                </p>
             </div>
-        </AppLayout>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Active Leaves</CardTitle>
+                    <CardDescription>
+                        Review and manage active leave entries
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Learner</TableHead>
+                                    <TableHead>Dates</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {activeRequests.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                                            No active leave found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    activeRequests.map((request) => {
+                                        const requestUser = mockUsers.find((u) => u.id === request.user_id)
+
+                                        return (
+                                            <TableRow key={request.id}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <UserIcon className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="font-medium">{requestUser?.name}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                                                        <span>{request.start_date} to {request.end_date}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => handleAction(request, 'edit')}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleAction(request, 'reject')}
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <ActionDialog
+                open={!!selectedRequest}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setSelectedRequest(null)
+                        setActionType(null)
+                    }
+                }}
+                request={selectedRequest}
+                type={actionType}
+                onConfirm={handleConfirmAction}
+            />
+        </div>
     )
 }
 

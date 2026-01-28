@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { AppLayout } from '@/components/layout/app-layout'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -119,7 +119,8 @@ export default function TrainingPlansPage() {
     }
 
     return (
-        <AppLayout>
+
+        <>
             <div className="space-y-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -245,23 +246,23 @@ export default function TrainingPlansPage() {
                         </Table>
                     </CardContent>
                 </Card>
-                <PlanDialog
-                    open={isDialogOpen}
-                    onOpenChange={(open) => {
-                        setIsDialogOpen(open)
-                        if (!open) {
-                            setEditingPlan(null)
-                            setDialogMode('create')
-                        }
-                    }}
-                    plan={editingPlan}
-                    mode={dialogMode}
-                    setMode={setDialogMode}
-                    onSave={handleSave}
-                    handleDelete={handleDelete}
-                />
             </div>
-        </AppLayout>
+            <PlanDialog
+                open={isDialogOpen}
+                onOpenChange={(open) => {
+                    setIsDialogOpen(open)
+                    if (!open) {
+                        setEditingPlan(null)
+                        setDialogMode('create')
+                    }
+                }}
+                plan={editingPlan}
+                mode={dialogMode}
+                setMode={setDialogMode}
+                onSave={handleSave}
+                handleDelete={handleDelete}
+            />
+        </>
     )
 }
 

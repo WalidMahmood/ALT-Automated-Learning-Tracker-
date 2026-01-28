@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import RootLayout from '@/components/layout/RootLayout'
+import { AppLayout } from '@/components/layout/app-layout'
 import DashboardPage from '@/pages/dashboard/page'
 import CalendarPage from '@/pages/calendar/page'
 import TrainingPlanPage from '@/pages/training-plan/page'
@@ -13,19 +14,21 @@ import HomePage from '@/pages/page'
 function App() {
     return (
         <RootLayout>
-            <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/calendar" element={<CalendarPage />} />
-                <Route path="/training-plan" element={<TrainingPlanPage />} />
+            <AppLayout>
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/calendar" element={<CalendarPage />} />
+                    <Route path="/training-plan" element={<TrainingPlanPage />} />
 
-                {/* Admin Routes */}
-                <Route path="/admin/users" element={<UsersPage />} />
-                <Route path="/admin/entries" element={<EntriesPage />} />
-                <Route path="/admin/topics" element={<TopicsPage />} />
-                <Route path="/admin/training-plans" element={<TrainingPlansPage />} />
-                <Route path="/admin/leave" element={<LeavePage />} />
-            </Routes>
+                    {/* Admin Routes */}
+                    <Route path="/admin/users" element={<UsersPage />} />
+                    <Route path="/admin/entries" element={<EntriesPage />} />
+                    <Route path="/admin/topics" element={<TopicsPage />} />
+                    <Route path="/admin/training-plans" element={<TrainingPlansPage />} />
+                    <Route path="/admin/leave" element={<LeavePage />} />
+                </Routes>
+            </AppLayout>
         </RootLayout>
     )
 }

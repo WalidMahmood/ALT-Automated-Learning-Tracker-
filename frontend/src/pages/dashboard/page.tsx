@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from 'react'
-import { AppLayout } from '@/components/layout/app-layout'
+
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { setLeaveModalOpen } from '@/lib/store/slices/uiSlice'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,11 +27,7 @@ import { EntryDetailModal } from '@/components/admin/entry-detail-modal'
 import { OverrideModal } from '@/components/admin/override-modal'
 
 export default function DashboardPage() {
-  return (
-    <AppLayout>
-      <DashboardContent />
-    </AppLayout>
-  )
+  return <DashboardContent />
 }
 
 function DashboardContent() {

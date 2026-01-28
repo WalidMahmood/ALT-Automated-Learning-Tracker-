@@ -1,20 +1,27 @@
 """
 User serializers for authentication and profile management
 """
+import logging
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
+from .utils import mask_email
 
+
+logger = logging.getLogger(__name__)
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model - full profile"""
     
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id',
             'email',
+            'name',
             'github_url',
             'expertise_level',
             'experience_years',
@@ -25,6 +32,12 @@ class UserSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_name(self, obj):
+        """Generate display name from email"""
+        if not obj.email:
+            return "User"
+        return obj.email.split('@')[0].title()
     
     def validate_email(self, value):
         """Validate email domain"""
@@ -102,8 +115,12 @@ class LoginSerializer(serializers.Serializer):
         email = attrs.get('email')
         password = attrs.get('password')
         
+        masked_email = mask_email(email)
+        logger.info(f"LOGIN: Attempting login for email: '{masked_email}'")
+        
         # Validate email domain
         if not email.endswith('@brainstation-23.com'):
+            logger.info(f"DEBUG LOGIN: Invalid domain for {masked_email}")
             raise serializers.ValidationError(
                 'Email must be @brainstation-23.com domain'
             )
@@ -115,6 +132,20 @@ class LoginSerializer(serializers.Serializer):
             password=password
         )
         
+        if user:
+            logger.info(f"DEBUG LOGIN: Authentication SUCCESS for {mask_email(user.email)}")
+        else:
+            logger.info(f"DEBUG LOGIN: Authentication FAILED for {masked_email}")
+            # Check if user exists to debug password issue
+            from .models import User
+            try:
+                u = User.objects.get(email=email)
+                logger.info(f"DEBUG LOGIN: User {masked_email} exists. Checking password with raw verify...")
+                logger.info(f"DEBUG LOGIN: Check password result: {u.check_password(password)}")
+                logger.info(f"DEBUG LOGIN: User is_active: {u.is_active}")
+            except User.DoesNotExist:
+                logger.info(f"DEBUG LOGIN: User {masked_email} DOES NOT EXIST in database")
+
         if not user:
             raise serializers.ValidationError(
                 'Invalid email or password'
@@ -132,11 +163,14 @@ class LoginSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for user profile (learner can update own profile)"""
     
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id',
             'email',
+            'name',
             'github_url',
             'expertise_level',
             'experience_years',
@@ -146,6 +180,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'email', 'role', 'created_at', 'updated_at']
+
+    def get_name(self, obj):
+        """Generate display name from email"""
+        if not obj.email:
+            return "User"
+        return obj.email.split('@')[0].title()
 
 
 class TokenSerializer(serializers.Serializer):
