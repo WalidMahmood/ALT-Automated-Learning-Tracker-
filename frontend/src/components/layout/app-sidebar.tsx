@@ -9,12 +9,9 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Calendar,
-  ChevronLeft,
   ClipboardList,
   FileText,
   Home,
-  Layers,
-  Settings,
   Users,
   X,
 } from 'lucide-react'
@@ -49,12 +46,6 @@ const navItems: NavItem[] = [
     title: 'Entry Review',
     href: '/admin/entries',
     icon: <FileText className="h-4 w-4" />,
-    adminOnly: true,
-  },
-  {
-    title: 'Topic Management',
-    href: '/admin/topics',
-    icon: <Layers className="h-4 w-4" />,
     adminOnly: true,
   },
   {

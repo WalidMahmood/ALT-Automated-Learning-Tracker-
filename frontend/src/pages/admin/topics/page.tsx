@@ -38,22 +38,36 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { BookOpen, MoreHorizontal, Plus, Search, Pencil, Trash2, ChevronRight, CornerDownRight, ChevronDown, Filter } from 'lucide-react'
-import { mockTopics, mockEntries } from '@/lib/mock-data'
+import { mockEntries } from '@/lib/mock-data'
 import { useAppSelector } from '@/lib/store/hooks'
 import { Navigate } from 'react-router-dom'
 import type { Topic } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { ParentTopicSelector } from '@/components/forms/parent-topic-selector'
+import api from '@/lib/api'
 
 export default function TopicsPage() {
     const { user } = useAppSelector((state) => state.auth)
-    const [topics, setTopics] = useState<Topic[]>(mockTopics)
+    const [topics, setTopics] = useState<Topic[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [parentFilter, setParentFilter] = useState<string>('all')
     const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set())
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingTopic, setEditingTopic] = useState<Topic | null>(null)
     const [isFlatView, setIsFlatView] = useState(false)
+
+    // Fetch topics from API
+    useEffect(() => {
+        const fetchTopics = async () => {
+            try {
+                const response = await api.get('/topics/')
+                setTopics(response.data)
+            } catch (error) {
+                console.error('Failed to fetch topics:', error)
+            }
+        }
+        fetchTopics()
+    }, [])
 
     // Redirect non-admins
     if (user?.role !== 'admin') {
@@ -72,9 +86,10 @@ export default function TopicsPage() {
     // Filter and build tree
     const displayTopics = useMemo(() => {
         let filtered = topics.filter((topic) => {
+            const isMatch = topic.is_active !== false // Defensive check
             const matchesSearch = topic.name.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesParent = parentFilter === 'all' || topic.id === Number(parentFilter) || topic.parent_id === Number(parentFilter)
-            return matchesSearch && matchesParent
+            return isMatch && matchesSearch && matchesParent
         })
 
         if (isFlatView || searchQuery) {
@@ -102,17 +117,11 @@ export default function TopicsPage() {
             }
         }
 
-        const roots = filtered.filter(t => !t.parent_id)
+        // Roots are topics that:
+        // 1. Have no parent_id
+        // 2. OR their parent is NOT in the filtered results (orphans or filtered out by search)
+        const roots = filtered.filter(t => !t.parent_id || !filtered.some(tp => tp.id === t.parent_id))
         roots.forEach(root => addNode(root, 0))
-
-        // Handle orphans when searching
-        if (searchQuery) {
-            filtered.forEach(t => {
-                if (!result.find(r => r.id === t.id)) {
-                    result.push({ ...t, level: 0, hasChildren: false })
-                }
-            })
-        }
 
         return result
     }, [searchQuery, parentFilter, expandedNodes, topics])
@@ -124,23 +133,31 @@ export default function TopicsPage() {
         setIsDialogOpen(true)
     }
 
-    const handleDelete = (id: number) => {
-        setTopics(prev => prev.filter(t => t.id !== id && t.parent_id !== id))
+    const handleDelete = async (id: number) => {
+        try {
+            await api.delete(`/topics/${id}/`)
+            setTopics(prev => prev.filter(t => t.id !== id && t.parent_id !== id))
+        } catch (error) {
+            console.error('Failed to delete topic:', error)
+        }
     }
 
-    const handleSave = (topic: Partial<Topic>) => {
-        if (editingTopic) {
-            setTopics(prev => prev.map(t => t.id === editingTopic.id ? { ...t, ...topic } as Topic : t))
-        } else {
-            const newTopic: Topic = {
-                ...topic,
-                id: Math.max(0, ...topics.map(t => t.id)) + 1,
-                is_active: true
-            } as Topic
-            setTopics(prev => [...prev, newTopic])
+    const handleSave = async (topicData: Partial<Topic>) => {
+        try {
+            if (editingTopic) {
+                // Update existing topic
+                const response = await api.put(`/topics/${editingTopic.id}/`, topicData)
+                setTopics(prev => prev.map(t => t.id === editingTopic.id ? response.data : t))
+            } else {
+                // Create new topic
+                const response = await api.post('/topics/', topicData)
+                setTopics(prev => [...prev, response.data])
+            }
+            setIsDialogOpen(false)
+            setEditingTopic(null)
+        } catch (error) {
+            console.error('Failed to save topic:', error)
         }
-        setIsDialogOpen(false)
-        setEditingTopic(null)
     }
 
     return (
@@ -155,7 +172,7 @@ export default function TopicsPage() {
                 <div className="flex items-center gap-3">
                     <Button onClick={() => setIsDialogOpen(true)} size="sm" className="h-9">
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Topic
+                        Add New Topic
                     </Button>
                     <div className="flex items-center gap-2 border rounded-md p-1 h-9 bg-background">
                         <Button
@@ -236,7 +253,7 @@ export default function TopicsPage() {
                                 {displayTopics.map((topic) => {
                                     const topicEntries = mockEntries.filter(e => e.topic_id === topic.id)
                                     const totalHours = topicEntries.reduce((sum, e) => sum + e.hours, 0)
-                                    const parent = mockTopics.find(t => t.id === topic.parent_id)
+                                    const parent = topics.find(t => t.id === topic.parent_id)
                                     const isExpanded = expandedNodes.has(topic.id)
 
                                     return (
@@ -282,7 +299,28 @@ export default function TopicsPage() {
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{topic.benchmark_hours}h</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium">
+                                                        {(() => {
+                                                            const calculateTotalHours = (topicId: number): number => {
+                                                                const t = topics.find(t => t.id === topicId)
+                                                                const selfHours = t ? Number(t.benchmark_hours) : 0
+                                                                const children = topics.filter(t => t.parent_id === topicId)
+
+                                                                if (children.length === 0) {
+                                                                    return selfHours
+                                                                }
+                                                                return selfHours + children.reduce((sum, child) => sum + calculateTotalHours(child.id), 0)
+                                                            }
+                                                            return calculateTotalHours(topic.id)
+                                                        })()}h
+                                                    </span>
+                                                    {topics.some(t => t.parent_id === topic.id) && (
+                                                        <span className="text-xs text-muted-foreground">(calculated)</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="text-sm text-muted-foreground">
                                                     {topicEntries.length} entries / {totalHours}h logged

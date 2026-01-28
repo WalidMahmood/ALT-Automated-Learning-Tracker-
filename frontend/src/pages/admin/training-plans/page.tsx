@@ -14,7 +14,6 @@ import {
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Search, FileText, Users, Pencil, Trash2, BookOpen, Clock, Eye } from 'lucide-react'
-import { mockTrainingPlans, mockTopics } from '@/lib/mock-data'
 import { format } from 'date-fns'
 import {
     Dialog,
@@ -25,6 +24,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { TopicPicker } from '@/components/forms/topic-picker'
 import {
     Select,
     SelectContent,
@@ -32,21 +32,40 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import type { TrainingPlan, PlanTopic } from '@/lib/types'
+import type { TrainingPlan, PlanTopic, Topic } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useAppSelector } from '@/lib/store/hooks'
 import { Navigate } from 'react-router-dom'
 import { useEffect, useMemo } from 'react'
 import { Filter } from 'lucide-react'
+import api from '@/lib/api'
 
 export default function TrainingPlansPage() {
     const { user } = useAppSelector((state) => state.auth)
-    const [plans, setPlans] = useState<TrainingPlan[]>(mockTrainingPlans)
+    const [plans, setPlans] = useState<TrainingPlan[]>([])
+    const [topics, setTopics] = useState<Topic[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft' | 'archived'>('all')
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingPlan, setEditingPlan] = useState<TrainingPlan | null>(null)
     const [dialogMode, setDialogMode] = useState<'view' | 'edit' | 'create'>('create')
+
+    // Fetch plans and topics from API
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [plansRes, topicsRes] = await Promise.all([
+                    api.get('/training-plans/'),
+                    api.get('/topics/')
+                ])
+                setPlans(plansRes.data)
+                setTopics(topicsRes.data)
+            } catch (error) {
+                console.error('Failed to fetch data:', error)
+            }
+        }
+        fetchData()
+    }, [])
 
     // Redirect non-admins
     if (user?.role !== 'admin') {
@@ -86,36 +105,48 @@ export default function TrainingPlansPage() {
     }
 
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         const confirmed = window.confirm('Archive this training plan? It will be moved to the archived tab.')
         if (confirmed) {
-            setPlans(prev => prev.map(p => p.id === id ? { ...p, is_archived: true } : p))
-            setIsDialogOpen(false)
-            setEditingPlan(null)
+            try {
+                await api.delete(`/training-plans/${id}/`)
+                setPlans(prev => prev.map(p => p.id === id ? { ...p, is_archived: true } : p))
+                setIsDialogOpen(false)
+                setEditingPlan(null)
+            } catch (error) {
+                console.error('Failed to archive plan:', error)
+            }
         }
     }
 
-    const handleRestore = (id: number) => {
+    const handleRestore = async (id: number) => {
         const confirmed = window.confirm('Restore this training plan from archive?')
         if (confirmed) {
-            setPlans(prev => prev.map(p => p.id === id ? { ...p, is_archived: false } : p))
+            try {
+                await api.post(`/training-plans/${id}/restore/`)
+                setPlans(prev => prev.map(p => p.id === id ? { ...p, is_archived: false } : p))
+            } catch (error) {
+                console.error('Failed to restore plan:', error)
+            }
         }
     }
 
-    const handleSave = (plan: Partial<TrainingPlan>) => {
-        if (editingPlan) {
-            setPlans(prev => prev.map(p => p.id === editingPlan.id ? { ...p, ...plan } as TrainingPlan : p))
-        } else {
-            const newPlan: TrainingPlan = {
-                ...plan,
-                id: Math.max(0, ...plans.map(p => p.id)) + 1,
-                created_at: new Date().toISOString(),
-                assignments: []
-            } as TrainingPlan
-            setPlans(prev => [...prev, newPlan])
+    const handleSave = async (planData: Partial<TrainingPlan>) => {
+        try {
+            if (editingPlan) {
+                // Update existing plan
+                const response = await api.put(`/training-plans/${editingPlan.id}/`, planData)
+                setPlans(prev => prev.map(p => p.id === editingPlan.id ? response.data : p))
+            } else {
+                // Create new plan
+                const response = await api.post('/training-plans/', planData)
+                setPlans(prev => [...prev, response.data])
+            }
+            setIsDialogOpen(false)
+            setEditingPlan(null)
+        } catch (error) {
+            console.error('Failed to save plan:', error)
         }
-        setIsDialogOpen(false)
-        setEditingPlan(null)
     }
 
     return (
@@ -261,6 +292,7 @@ export default function TrainingPlansPage() {
                 setMode={setDialogMode}
                 onSave={handleSave}
                 handleDelete={handleDelete}
+                topics={topics}
             />
         </>
     )
@@ -274,9 +306,10 @@ interface PlanDialogProps {
     setMode: (mode: 'view' | 'edit' | 'create') => void
     onSave: (plan: Partial<TrainingPlan>) => void
     handleDelete: (id: number) => void
+    topics: Topic[]
 }
 
-function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDelete }: PlanDialogProps) {
+function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDelete, topics }: PlanDialogProps) {
     const isView = mode === 'view'
 
     const [formData, setFormData] = useState<Partial<TrainingPlan>>({
@@ -301,20 +334,20 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
         }
     }, [open, plan, mode]) // Added mode dependency to ensure sync when switching to edit
 
-    const [selectKey, setSelectKey] = useState(0)
 
     const handleAddTopic = (topicId: number) => {
         if (isView) return
-        const topic = mockTopics.find(t => t.id === topicId)
+        const topic = topics.find(t => t.id === topicId)
         if (!topic) return
 
-        if (formData.plan_topics?.some(pt => pt.topic_id === topicId)) {
-            setSelectKey(k => k + 1) // Reset anyway
+        // Use topic_id or topic.id for comparison
+        if (formData.plan_topics?.some(pt => (pt.topic_id || pt.topic?.id) === topicId)) {
             return
         }
 
         const newPlanTopic: Partial<PlanTopic> = {
             topic_id: topicId,
+            topic: topic, // Include full topic for immediate UI update
             expected_hours: topic.benchmark_hours,
             sequence_order: (formData.plan_topics?.length || 0) + 1
         }
@@ -323,14 +356,13 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
             ...formData,
             plan_topics: [...(formData.plan_topics || []), newPlanTopic as PlanTopic]
         })
-        setSelectKey(k => k + 1) // Force reset of Select component
     }
 
     const handleRemoveTopic = (topicId: number) => {
         if (isView) return
         setFormData({
             ...formData,
-            plan_topics: formData.plan_topics?.filter(pt => pt.topic_id !== topicId)
+            plan_topics: formData.plan_topics?.filter(pt => (pt.topic_id || pt.topic?.id) !== topicId)
         })
     }
 
@@ -339,7 +371,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
         setFormData({
             ...formData,
             plan_topics: formData.plan_topics?.map(pt =>
-                pt.topic_id === topicId ? { ...pt, expected_hours: hours } : pt
+                (pt.topic_id || pt.topic?.id) === topicId ? { ...pt, expected_hours: hours } : pt
             )
         })
     }
@@ -350,7 +382,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
         onSave(formData)
     }
 
-    const totalHours = formData.plan_topics?.reduce((sum, pt) => sum + pt.expected_hours, 0) || 0
+    const totalHours = formData.plan_topics?.reduce((sum, pt) => sum + Number(pt.expected_hours), 0) || 0
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -421,70 +453,82 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                             />
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between border-b pb-2">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base">Selected Topics</Label>
-                                    <p className="text-xs text-muted-foreground">Total Plan Hours: {totalHours}h</p>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between border-b pb-1.5 px-0.5">
+                                <div className="flex items-center gap-3">
+                                    <Label className="text-sm font-semibold">Topics</Label>
+                                    <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5 font-medium bg-muted/50">
+                                        {totalHours.toFixed(1)}h total
+                                    </Badge>
                                 </div>
-                                {!isView && (
-                                    <div className="w-64">
-                                        <Select key={selectKey} onValueChange={(v) => handleAddTopic(Number(v))}>
-                                            <SelectTrigger>
-                                                <div className="flex items-center gap-2">
-                                                    <Plus className="h-4 w-4" />
-                                                    <span>Add Topic...</span>
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {mockTopics.map(t => (
-                                                    <SelectItem key={t.id} value={t.id.toString()}>
-                                                        {t.name} ({t.benchmark_hours}h)
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-[11px] h-7 px-2 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                                        onClick={() => window.open('/admin/topics', '_blank')}
+                                    >
+                                        <Plus className="mr-1 h-3 w-3" />
+                                        Create New Topic
+                                    </Button>
+                                    {!isView && (
+                                        <div className="w-56">
+                                            <TopicPicker
+                                                allTopics={topics}
+                                                excludeTopicIds={formData.plan_topics?.map(pt => pt.topic_id || pt.topic?.id).filter((id): id is number => id !== undefined) || []}
+                                                onSelect={(id) => handleAddTopic(id)}
+                                                placeholder="Add Topic..."
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="space-y-2 min-h-[200px]">
-                                {formData.plan_topics?.length === 0 ? (
+                                {(!formData.plan_topics || formData.plan_topics.length === 0) ? (
                                     <div className="flex flex-col items-center justify-center py-10 border rounded-dashed border-2 bg-muted/30">
                                         <BookOpen className="h-8 w-8 text-muted-foreground mb-2" />
                                         <p className="text-sm text-muted-foreground font-medium">No topics added yet</p>
                                     </div>
                                 ) : (
-                                    formData.plan_topics?.map((pt, index) => {
-                                        const topic = mockTopics.find(t => t.id === pt.topic_id)
+                                    formData.plan_topics.map((pt, index) => {
+                                        // Fallback to embedded topic data if not found in global list (e.g. for soft-deleted topics)
+                                        const topicName = topics.find(t => t.id === pt.topic_id)?.name || pt.topic?.name || 'Unknown Topic'
+
                                         return (
-                                            <div key={pt.topic_id} className="flex items-center gap-4 p-3 rounded-lg border bg-card">
+                                            <div key={`${pt.topic_id}-${index}`} className="flex items-center gap-4 p-3 rounded-lg border bg-card">
                                                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
                                                     {index + 1}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-medium text-sm">{topic?.name}</p>
+                                                    <p className="font-medium text-sm">{topicName}</p>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                                                     {isView ? (
-                                                        <span className="text-sm font-medium w-12 text-center">{pt.expected_hours}</span>
+                                                        <span className="text-sm font-medium w-12 text-center">{Number(pt.expected_hours).toFixed(1)}</span>
                                                     ) : (
                                                         <Input
                                                             type="number"
                                                             className="w-20 h-8"
                                                             value={pt.expected_hours}
                                                             onChange={(e) => handleUpdateHours(pt.topic_id, Number(e.target.value))}
+                                                            step="0.1"
+                                                            min="0"
                                                         />
                                                     )}
                                                     <span className="text-xs text-muted-foreground">h</span>
                                                 </div>
                                                 {!isView && (
                                                     <Button
+                                                        type="button"
                                                         variant="ghost"
                                                         size="icon"
                                                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                                        onClick={() => handleRemoveTopic(pt.topic_id)}
+                                                        onClick={(e) => {
+                                                            e.preventDefault()
+                                                            handleRemoveTopic(pt.topic_id)
+                                                        }}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
