@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { setEntryModalOpen } from '@/lib/store/slices/uiSlice'
-import { addEntry, updateEntry, selectEntry, deleteEntry } from '@/lib/store/slices/entriesSlice'
+import { createEntry, updateEntryThunk, selectEntry, deleteEntryThunk } from '@/lib/store/slices/entriesSlice'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { TopicSelector } from './topic-selector'
+import { TopicPicker } from './topic-picker'
 import {
   AlertCircle,
   Bot,
@@ -36,79 +36,14 @@ import {
   Plus,
   Trash2,
   Pencil,
+  Lock,
+  Target,
 } from 'lucide-react'
-import { mockTopics } from '@/lib/mock-data'
-import type { Entry, ExtraLearningFormData, EntryFormData } from '@/lib/types'
+import { Slider } from '@/components/ui/slider'
+import type { EntryFormData } from '@/lib/types'
 
 const BLOCKER_OPTIONS = ['Technical', 'Environmental', 'Personal', 'Resource', 'Other'] as const
 
-interface ExtraLearningItemProps {
-  index: number
-  data: ExtraLearningFormData
-  onChange: (index: number, data: ExtraLearningFormData) => void
-  onRemove: (index: number) => void
-}
-
-function ExtraLearningItem({ index, data, onChange, onRemove }: ExtraLearningItemProps) {
-  return (
-    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Additional Learning #{index + 1}</span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => onRemove(index)}
-          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Activity Name</Label>
-        <Input
-          placeholder="e.g., Code review, Team meeting, Documentation"
-          value={data.activity_name}
-          onChange={(e) => onChange(index, { ...data, activity_name: e.target.value })}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Time Spent</Label>
-          <Input
-            type="text"
-            placeholder="HH:MM"
-            value={data.hours}
-            onChange={(e) => onChange(index, { ...data, hours: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Blockers (Optional)</Label>
-          <Input
-            placeholder="Any blockers..."
-            value={data.blockers_text}
-            onChange={(e) => onChange(index, { ...data, blockers_text: e.target.value })}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Textarea
-          placeholder="What did you learn? (50-500 characters)"
-          value={data.description}
-          onChange={(e) => onChange(index, { ...data, description: e.target.value })}
-          className="min-h-[80px] resize-y"
-        />
-        <p className="text-xs text-muted-foreground">
-          {data.description.length}/500 characters
-        </p>
-      </div>
-    </div>
-  )
-}
 
 export function EntryFormModal() {
   const dispatch = useAppDispatch()
@@ -116,16 +51,17 @@ export function EntryFormModal() {
   const { selectedEntry } = useAppSelector((state) => state.entries)
   const { user } = useAppSelector((state) => state.auth)
   const { requests: leaveRequests } = useAppSelector((state) => state.leaveRequests)
+  const { topics } = useAppSelector((state) => state.topics)
+  const { entries } = useAppSelector((state) => state.entries)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [viewState, setViewState] = useState<'list' | 'form'>('list')
 
-  const { entries } = useAppSelector((state) => state.entries)
-
-  // Get all entries for the selected date
   const dayEntries = entries.filter(
-    (e) => e.date === selectedDate && e.user_id === user?.id
+    (e) => e.date === selectedDate && e.user === user?.id
   )
+
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const isLeaveDay = leaveRequests.some(
     (l) => {
@@ -139,12 +75,11 @@ export function EntryFormModal() {
     topic_id: null,
     hours: '',
     learned_text: '',
+    progress_percent: 0,
     blockers_text: '',
-    extra_learning: [],
   })
 
   const [blockerType, setBlockerType] = useState<string>('')
-
   const [isEditing, setIsEditing] = useState(false)
   const prevOpen = useRef(false)
 
@@ -174,16 +109,11 @@ export function EntryFormModal() {
 
       setFormData({
         date: selectedEntry.date,
-        topic_id: selectedEntry.topic_id,
+        topic_id: selectedEntry.topic,
         hours: hoursStr,
         learned_text: selectedEntry.learned_text,
+        progress_percent: selectedEntry.progress_percent,
         blockers_text: selectedEntry.blockers_text?.split(':')[1]?.trim() || selectedEntry.blockers_text || '',
-        extra_learning: selectedEntry.extra_learning.map((e) => ({
-          activity_name: e.activity_name,
-          hours: `${Math.floor(e.hours)}:${Math.round((e.hours - Math.floor(e.hours)) * 60).toString().padStart(2, '0')}`,
-          description: e.description,
-          blockers_text: e.blockers_text || '',
-        })),
       })
 
       // Extract blocker type if it exists
@@ -198,8 +128,8 @@ export function EntryFormModal() {
         topic_id: null,
         hours: '',
         learned_text: '',
+        progress_percent: 0,
         blockers_text: '',
-        extra_learning: [],
       })
       setBlockerType('')
     }
@@ -211,63 +141,77 @@ export function EntryFormModal() {
     setViewState('list')
   }
 
+  const validateTimeFormat = (timeStr: string): boolean => {
+    // Regex for HH:MM format (allows 1 or 2 digits for hours, always 2 for minutes)
+    const timeRegex = /^[0-9]{1,2}:[0-5][0-9]$/
+    return timeRegex.test(timeStr.trim())
+  }
+
   const parseHours = (timeStr: string): number => {
     const [hours, minutes] = timeStr.split(':').map(Number)
-    return hours + (minutes || 0) / 60
+    return parseFloat((hours + (minutes || 0) / 60).toFixed(2))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.topic_id || !user) return
 
+    // Validate learned_text length
+    if (formData.learned_text.length < 50) {
+      setSubmitError('Learning log must be at least 50 characters.')
+      return
+    }
+
+    if (!validateTimeFormat(formData.hours)) {
+      setSubmitError('Invalid time format. Please use HH:MM (e.g., 2:30 or 08:45).')
+      return
+    }
+
+    const hoursDecimal = parseHours(formData.hours)
+    if (hoursDecimal < 0.1 || hoursDecimal > 12.0) {
+      setSubmitError('Hours must be between 0.1 and 12.0')
+      return
+    }
+
+    // Proactive Duplicate Check
+    const isDuplicate = dayEntries.some(
+      (e) => e.topic === formData.topic_id && (!selectedEntry || e.id !== selectedEntry.id)
+    )
+
+    if (isDuplicate) {
+      setSubmitError("Topic already entered. Your performance won't be increased by inputting the same topic twice.")
+      return
+    }
+
+    setSubmitError(null)
     setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const entryData: Entry = {
-      id: selectedEntry?.id || (entries.length > 0 ? Math.max(...entries.map((e) => e.id)) + 1 : 1),
-      user_id: user.id,
+    const payload: any = {
       date: formData.date,
-      topic_id: formData.topic_id,
+      topic: formData.topic_id,
       hours: parseHours(formData.hours),
       learned_text: formData.learned_text,
+      progress_percent: formData.progress_percent,
       blockers_text: blockerType && formData.blockers_text
         ? `${blockerType}: ${formData.blockers_text}`
         : formData.blockers_text || null,
-      ai_status: 'pending',
-      ai_decision: null,
-      ai_confidence: null,
-      ai_reasoning: null,
-      ai_analyzed_at: null,
-      status: 'pending',
-      admin_override: false,
-      override_reason: null,
-      override_comment: null,
-      override_at: null,
-      admin_id: null,
-      extra_learning: formData.extra_learning.map((e, i) => ({
-        id: i + 1,
-        entry_id: selectedEntry?.id || 0,
-        activity_name: e.activity_name,
-        hours: parseHours(e.hours),
-        description: e.description,
-        blockers_text: e.blockers_text || null,
-        sequence_order: i + 1,
-        created_at: new Date().toISOString(),
-      })),
-      created_at: selectedEntry?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     }
 
-    if (selectedEntry) {
-      dispatch(updateEntry(entryData))
-    } else {
-      dispatch(addEntry(entryData))
+    try {
+      if (selectedEntry) {
+        await dispatch(updateEntryThunk({ id: selectedEntry.id, data: payload })).unwrap()
+      } else {
+        await dispatch(createEntry(payload)).unwrap()
+      }
+      handleClose()
+    } catch (err: any) {
+      // Extract specific field errors if available
+      const errorMessage = err?.topic || err?.non_field_errors?.[0] ||
+        (typeof err === 'string' ? err : 'Operation failed. Please check inputs.')
+      setSubmitError(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setIsSubmitting(false)
-    handleClose()
   }
 
   const handleDelete = async () => {
@@ -278,38 +222,13 @@ export function EntryFormModal() {
     )
 
     if (confirmed) {
-      dispatch(deleteEntry(selectedEntry.id))
+      dispatch(deleteEntryThunk(selectedEntry.id))
       handleClose()
     }
   }
 
-  const addExtraLearning = () => {
-    setFormData((prev) => ({
-      ...prev,
-      extra_learning: [
-        ...prev.extra_learning,
-        { activity_name: '', hours: '', description: '', blockers_text: '' },
-      ],
-    }))
-  }
 
-  const updateExtraLearning = (index: number, data: ExtraLearningFormData) => {
-    setFormData((prev) => ({
-      ...prev,
-      extra_learning: prev.extra_learning.map((item, i) =>
-        i === index ? data : item
-      ),
-    }))
-  }
-
-  const removeExtraLearning = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      extra_learning: prev.extra_learning.filter((_, i) => i !== index),
-    }))
-  }
-
-  const selectedTopic = mockTopics.find((t) => t.id === formData.topic_id)
+  const selectedTopic = topics.find((t) => t.id === formData.topic_id)
   const isViewOnly = !!(selectedEntry && !isEditing)
 
   // Determine Title
@@ -343,7 +262,7 @@ export function EntryFormModal() {
           <div className="space-y-6">
             <div className="space-y-3">
               {dayEntries.map((entry) => {
-                const topic = mockTopics.find(t => t.id === entry.topic_id)
+                const topic = topics.find(t => t.id === entry.topic)
                 return (
                   <div
                     key={entry.id}
@@ -461,11 +380,79 @@ export function EntryFormModal() {
                     </span>
                   </div>
                 ) : (
-                  <TopicSelector
-                    value={formData.topic_id}
-                    onChange={(value) => setFormData({ ...formData, topic_id: value })}
-                    disabled={isViewOnly}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <TopicPicker
+                      allTopics={topics}
+                      onSelect={(id) => {
+                        const t = topics.find(x => x.id === id);
+                        setFormData({
+                          ...formData,
+                          topic_id: id,
+                          progress_percent: t?.mastery?.progress || 0
+                        })
+                      }}
+                      placeholder={selectedTopic ? selectedTopic.name : "Select Learning Topic..."}
+                    />
+                    {selectedTopic && (
+                      <div className="flex flex-col gap-2 p-3 bg-primary/5 rounded-md border border-primary/10">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-primary">Selected: {selectedTopic.name}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            Benchmark: ~{selectedTopic.benchmark_hours}h
+                          </span>
+                        </div>
+                        {selectedTopic.mastery?.is_locked && (
+                          <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
+                            <Lock className="h-3 w-3" />
+                            <span>
+                              Mastered: Further logging is locked {selectedTopic.mastery.lock_reason ? `by ${selectedTopic.mastery.lock_reason}` : 'for this area'}.
+                            </span>
+                          </div>
+                        )}
+                        {submitError && (
+                          <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                            <span>{submitError}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Progress Slider (Conceptual Finish) */}
+              <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-primary" />
+                    <Label className="font-semibold">Conceptual Progress</Label>
+                  </div>
+                  <Badge variant="secondary" className="font-mono">
+                    {formData.progress_percent}% Complete
+                  </Badge>
+                </div>
+
+                {isViewOnly ? (
+                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${formData.progress_percent}%` }}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Slider
+                      value={[formData.progress_percent]}
+                      max={100}
+                      step={1}
+                      onValueChange={(vals) => setFormData({ ...formData, progress_percent: vals[0] })}
+                      disabled={selectedTopic?.mastery?.is_locked}
+                    />
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Slide to update your mastery. Reaching 100% will lock further entries.
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -557,41 +544,6 @@ export function EntryFormModal() {
                 )}
               </div>
 
-              {/* Extra Learning */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Additional Learning (Non-Curriculum)</Label>
-                  {!isViewOnly && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addExtraLearning}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Extra
-                    </Button>
-                  )}
-                </div>
-
-                {formData.extra_learning.length > 0 ? (
-                  <div className="space-y-4">
-                    {formData.extra_learning.map((item, index) => (
-                      <ExtraLearningItem
-                        key={index}
-                        index={index}
-                        data={item}
-                        onChange={updateExtraLearning}
-                        onRemove={removeExtraLearning}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No additional learning activities recorded
-                  </p>
-                )}
-              </div>
             </form>
 
             <DialogFooter>
@@ -615,7 +567,10 @@ export function EntryFormModal() {
                   Edit Entry
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} disabled={isSubmitting || !formData.topic_id || isLeaveDay}>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !formData.topic_id || isLeaveDay || selectedTopic?.mastery?.is_locked}
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

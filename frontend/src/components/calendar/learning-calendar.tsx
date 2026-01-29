@@ -1,9 +1,10 @@
-'use client'
-
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { isWithinInterval, parseISO } from 'date-fns'
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { setSelectedDate, setEntryModalOpen, setCalendarView } from '@/lib/store/slices/uiSlice'
-import { selectEntry } from '@/lib/store/slices/entriesSlice'
+import { selectEntry, fetchEntries } from '@/lib/store/slices/entriesSlice'
+import { fetchTopics } from '@/lib/store/slices/topicsSlice'
+import { fetchLeaveRequests } from '@/lib/store/slices/leaveRequestsSlice'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +20,7 @@ import {
   ChevronRight,
   Plus,
 } from 'lucide-react'
-import { mockEntries, mockLeaveRequests, mockTopics } from '@/lib/mock-data'
+
 import type { CalendarView, Entry } from '@/lib/types'
 
 interface CalendarDay {
@@ -32,48 +33,6 @@ interface CalendarDay {
   leaveStatus: 'pending' | 'approved' | null
 }
 
-function getMonthDays(year: number, month: number, entries: any[]): CalendarDay[] {
-  const days: CalendarDay[] = []
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  // First day of the month
-  const firstDay = new Date(year, month, 1)
-  // Last day of the month
-  const lastDay = new Date(year, month + 1, 0)
-
-  // Start from the previous Sunday
-  const startDate = new Date(firstDay)
-  startDate.setDate(startDate.getDate() - startDate.getDay())
-
-  // End on the next Saturday after the last day
-  const endDate = new Date(lastDay)
-  if (endDate.getDay() !== 6) {
-    endDate.setDate(endDate.getDate() + (6 - endDate.getDay()))
-  }
-
-  const currentDate = new Date(startDate)
-  while (currentDate <= endDate) {
-    const dateString = toLocalDateString(currentDate)
-    const dayEntries = entries.filter((e) => e.date === dateString)
-    const leaveRequest = mockLeaveRequests.find((l) => l.date === dateString)
-
-    days.push({
-      date: new Date(currentDate),
-      dateString,
-      isCurrentMonth: currentDate.getMonth() === month,
-      isToday: currentDate.getTime() === today.getTime(),
-      entries: dayEntries,
-      hasLeave: !!leaveRequest,
-      leaveStatus: leaveRequest?.status === 'approved' || leaveRequest?.status === 'pending'
-        ? leaveRequest.status
-        : null,
-    })
-    currentDate.setDate(currentDate.getDate() + 1)
-  }
-
-  return days
-}
 
 // Helper to get local date string YYYY-MM-DD
 function toLocalDateString(date: Date): string {
@@ -101,11 +60,19 @@ function getStatusColor(status: string): string {
 export function LearningCalendar() {
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state) => state.auth)
-  const { calendarView, selectedDate } = useAppSelector((state) => state.ui)
+  const { calendarView } = useAppSelector((state) => state.ui)
+  const { topics } = useAppSelector((state) => state.topics)
   const { entries } = useAppSelector((state) => state.entries)
   const { requests: leaveRequests } = useAppSelector((state) => state.leaveRequests)
 
   const [viewDate, setViewDate] = useState(new Date())
+
+  // Fetch entries, topics, and leaves on mount and when view date changes
+  useEffect(() => {
+    dispatch(fetchTopics())
+    dispatch(fetchEntries({}))
+    dispatch(fetchLeaveRequests())
+  }, [dispatch, viewDate])
 
   // Helper to generate days for a given range
   const getDaysForRange = (startDate: Date, endDate: Date, entries: any[]) => {
@@ -124,7 +91,22 @@ export function LearningCalendar() {
     while (currentDate <= finalDate) {
       const dateString = toLocalDateString(currentDate)
       const dayEntries = entries.filter((e) => e.date === dateString)
-      const leaveRequest = leaveRequests.find((l) => l.date === dateString && l.user_id === user?.id)
+      const leaveRequest = leaveRequests.find((l) => {
+        if (l.user !== user?.id || (l.status !== 'approved' && l.status !== 'pending')) return false
+
+        // Robust date checking using date-fns
+        // Parse dates from strings to Date objects
+        const start = parseISO(l.start_date)
+        const end = parseISO(l.end_date)
+        const checkDate = new Date(currentDate)
+
+        // Ensure time components don't interfere
+        start.setHours(0, 0, 0, 0)
+        end.setHours(0, 0, 0, 0)
+        checkDate.setHours(0, 0, 0, 0)
+
+        return isWithinInterval(checkDate, { start, end })
+      })
 
       days.push({
         date: new Date(currentDate),
@@ -134,7 +116,7 @@ export function LearningCalendar() {
         entries: dayEntries,
         hasLeave: !!leaveRequest,
         leaveStatus: leaveRequest?.status === 'approved' || leaveRequest?.status === 'pending'
-          ? leaveRequest.status
+          ? leaveRequest.status as any
           : null,
       })
       currentDate.setDate(currentDate.getDate() + 1)
@@ -193,6 +175,8 @@ export function LearningCalendar() {
   const handlePrev = () => {
     const newDate = new Date(viewDate)
     if (calendarView === 'month') {
+      // Avoid month skipping (e.g. Mar 31 -> Feb 28/29) by setting to 1st
+      newDate.setDate(1)
       newDate.setMonth(newDate.getMonth() - 1)
     } else if (calendarView === 'week') {
       newDate.setDate(newDate.getDate() - 7)
@@ -205,6 +189,8 @@ export function LearningCalendar() {
   const handleNext = () => {
     const newDate = new Date(viewDate)
     if (calendarView === 'month') {
+      // Avoid month skipping (e.g. Jan 31 -> Feb 28/29) by setting to 1st
+      newDate.setDate(1)
       newDate.setMonth(newDate.getMonth() + 1)
     } else if (calendarView === 'week') {
       newDate.setDate(newDate.getDate() + 7)
@@ -219,6 +205,7 @@ export function LearningCalendar() {
   }
 
   const handleDayClick = (day: CalendarDay) => {
+    if (day.hasLeave && day.leaveStatus === 'approved') return
     dispatch(setSelectedDate(day.dateString))
     dispatch(selectEntry(null)) // Always start with no selection (Day View)
     dispatch(setEntryModalOpen(true))
@@ -227,7 +214,7 @@ export function LearningCalendar() {
   // Filter entries for current user
   const userDays = days.map((day) => ({
     ...day,
-    entries: day.entries.filter((e) => e.user_id === user?.id),
+    entries: day.entries.filter((e) => e.user === user?.id),
   }))
 
   return (
@@ -349,7 +336,7 @@ export function LearningCalendar() {
               {/* Entry indicators */}
               <div className="mt-1 space-y-1">
                 {day.entries.slice(0, calendarView === 'month' ? 2 : undefined).map((entry) => {
-                  const topic = mockTopics.find((t) => t.id === entry.topic_id)
+                  const topic = topics.find((t) => t.id === entry.topic)
                   return (
                     <div
                       key={entry.id}

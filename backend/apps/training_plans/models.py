@@ -50,7 +50,7 @@ class PlanTopic(models.Model):
     )
     topic = models.ForeignKey(
         Topic,
-        on_delete=models.CASCADE,
+        on_delete=models.RESTRICT,
         related_name='plan_topics'
     )
     sequence_order = models.IntegerField(default=1)
@@ -81,7 +81,7 @@ class PlanAssignment(models.Model):
     )
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        on_delete=models.RESTRICT,
         related_name='plan_assignments'
     )
     assigned_by_admin = models.ForeignKey(

@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import type { LeaveRequest, LeaveStatus } from '@/lib/types'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
+import type { LeaveRequest } from '@/lib/types'
+import api from '@/lib/api'
 
 interface LeaveRequestsState {
   requests: LeaveRequest[]
@@ -8,76 +9,126 @@ interface LeaveRequestsState {
   error: string | null
 }
 
-import { mockLeaveRequests } from '@/lib/mock-data'
-
 const initialState: LeaveRequestsState = {
-  requests: mockLeaveRequests,
+  requests: [],
   selectedRequest: null,
   isLoading: false,
   error: null,
 }
 
+// Async Thunks
+export const fetchLeaveRequests = createAsyncThunk(
+  'leaveRequests/fetchAll',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/leaves/requests/')
+      return Array.isArray(response.data) ? response.data : response.data.results
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch leaves')
+    }
+  }
+)
+
+export const createLeaveRequest = createAsyncThunk(
+  'leaveRequests/create',
+  async (data: { start_date: string; end_date: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/leaves/requests/', data)
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to submit leave')
+    }
+  }
+)
+
+export const rejectLeaveRequest = createAsyncThunk(
+  'leaveRequests/reject',
+  async ({ id, admin_comment }: { id: number; admin_comment: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/leaves/requests/${id}/reject/`, { admin_comment })
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to reject leave')
+    }
+  }
+)
+
+export const cancelLeaveRequest = createAsyncThunk(
+  'leaveRequests/cancel',
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/leaves/requests/${id}/cancel/`)
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to cancel leave')
+    }
+  }
+)
+
+export const updateLeaveRequest = createAsyncThunk(
+  'leaveRequests/update',
+  async ({ id, data }: { id: number; data: Partial<LeaveRequest> }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/leaves/requests/${id}/`, data)
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to update leave')
+    }
+  }
+)
+
 const leaveRequestsSlice = createSlice({
   name: 'leaveRequests',
   initialState,
   reducers: {
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload
-    },
-    setRequests: (state, action: PayloadAction<LeaveRequest[]>) => {
-      state.requests = action.payload
-      state.isLoading = false
-    },
-    addRequest: (state, action: PayloadAction<LeaveRequest>) => {
-      state.requests.push(action.payload)
-    },
-    updateRequestStatus: (
-      state,
-      action: PayloadAction<{
-        requestId: number
-        status: LeaveStatus
-        adminId: number
-        comment?: string
-      }>
-    ) => {
-      const request = state.requests.find(
-        (r) => r.id === action.payload.requestId
-      )
-      if (request) {
-        request.status = action.payload.status
-        request.admin_id = action.payload.adminId
-        request.admin_comment = action.payload.comment || null
-        request.reviewed_at = new Date().toISOString()
-      }
-    },
-    cancelRequest: (state, action: PayloadAction<number>) => {
-      const request = state.requests.find((r) => r.id === action.payload)
-      if (request && request.status === 'pending') {
-        request.status = 'cancelled'
-      }
-    },
-    deleteRequest: (state, action: PayloadAction<number>) => {
-      state.requests = state.requests.filter((r) => r.id !== action.payload)
-    },
     selectRequest: (state, action: PayloadAction<LeaveRequest | null>) => {
       state.selectedRequest = action.payload
     },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload
-      state.isLoading = false
-    },
+    clearError: (state) => {
+      state.error = null
+    }
   },
+  extraReducers: (builder) => {
+    builder
+      // Fetch
+      .addCase(fetchLeaveRequests.pending, (state) => {
+        state.isLoading = true
+      })
+      .addCase(fetchLeaveRequests.fulfilled, (state, action) => {
+        state.requests = action.payload
+        state.isLoading = false
+      })
+      .addCase(fetchLeaveRequests.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+      // Create
+      .addCase(createLeaveRequest.fulfilled, (state, action) => {
+        state.requests.unshift(action.payload)
+      })
+      // Reject
+      .addCase(rejectLeaveRequest.fulfilled, (state, action) => {
+        const index = state.requests.findIndex(r => r.id === action.payload.id)
+        if (index !== -1) {
+          state.requests[index] = action.payload
+        }
+      })
+      // Cancel
+      .addCase(cancelLeaveRequest.fulfilled, (state, action) => {
+        const index = state.requests.findIndex(r => r.id === action.payload.id)
+        if (index !== -1) {
+          state.requests[index] = action.payload
+        }
+      })
+      // Update
+      .addCase(updateLeaveRequest.fulfilled, (state, action) => {
+        const index = state.requests.findIndex(r => r.id === action.payload.id)
+        if (index !== -1) {
+          state.requests[index] = action.payload
+        }
+      })
+  }
 })
 
-export const {
-  setLoading,
-  setRequests,
-  addRequest,
-  updateRequestStatus,
-  cancelRequest,
-  deleteRequest,
-  selectRequest,
-  setError,
-} = leaveRequestsSlice.actions
-
+export const { selectRequest, clearError } = leaveRequestsSlice.actions
 export default leaveRequestsSlice.reducer

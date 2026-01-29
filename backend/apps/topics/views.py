@@ -41,7 +41,7 @@ class TopicListCreateView(generics.ListCreateAPIView):
         topic = serializer.save()
         logger.info(f"Topic created: {topic.name} (ID: {topic.id})")
         return Response(
-            TopicSerializer(topic).data,
+            TopicSerializer(topic, context=self.get_serializer_context()).data,
             status=status.HTTP_201_CREATED
         )
 
@@ -73,7 +73,7 @@ class TopicDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
         topic = serializer.save()
         logger.info(f"Topic updated: {topic.name} (ID: {topic.id})")
-        return Response(TopicSerializer(topic).data)
+        return Response(TopicSerializer(topic, context=self.get_serializer_context()).data)
     
     def destroy(self, request, *args, **kwargs):
         """Soft delete - set is_active to False"""

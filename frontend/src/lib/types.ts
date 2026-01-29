@@ -22,6 +22,12 @@ export interface Topic {
   depth: number
   difficulty: number // 1-5
   benchmark_hours: number
+  mastery?: {
+    progress: number
+    is_locked: boolean
+    total_hours: number
+    lock_reason: string | null
+  }
   is_active: boolean
   children?: Topic[]
   created_at: string
@@ -35,13 +41,14 @@ export type AIDecision = 'approve' | 'flag' | 'reject' | 'clarify'
 // Entry Types
 export interface Entry {
   id: number
-  user_id: number
-  user?: User
+  user: number
+  user_email?: string
   date: string
-  topic_id: number
-  topic?: Topic
+  topic: number
+  topic_details?: Topic
   hours: number
   learned_text: string
+  progress_percent: number
   blockers_text: string | null
   // AI Analysis Fields
   ai_status: 'pending' | 'analyzed' | 'error'
@@ -57,23 +64,10 @@ export interface Entry {
   override_at: string | null
   admin_id: number | null
   admin?: User
-  // Extra learning
-  extra_learning: ExtraLearning[]
   created_at: string
   updated_at: string
 }
 
-// Extra Learning
-export interface ExtraLearning {
-  id: number
-  entry_id: number
-  activity_name: string
-  hours: number
-  description: string
-  blockers_text: string | null
-  sequence_order: number
-  created_at: string
-}
 
 // Training Plans
 export interface TrainingPlan {
@@ -111,13 +105,13 @@ export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
 
 export interface LeaveRequest {
   id: number
-  user_id: number
-  user?: User
+  user: number
+  user_email?: string
+  user_name?: string
   start_date: string
   end_date: string
   status: LeaveStatus
   admin_id: number | null
-  admin?: User
   admin_comment: string | null
   requested_at: string
   reviewed_at: string | null
@@ -162,16 +156,10 @@ export interface EntryFormData {
   topic_id: number | null
   hours: string // HH:MM format
   learned_text: string
+  progress_percent: number
   blockers_text: string
-  extra_learning: ExtraLearningFormData[]
 }
 
-export interface ExtraLearningFormData {
-  activity_name: string
-  hours: string
-  description: string
-  blockers_text: string
-}
 
 export interface LeaveRequestFormData {
   date: string

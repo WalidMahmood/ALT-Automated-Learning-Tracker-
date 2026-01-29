@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import type { User } from '@/lib/types'
+import api from '@/lib/api'
 
 interface UsersState {
   users: User[]
@@ -15,31 +16,25 @@ const initialState: UsersState = {
   error: null,
 }
 
+// Async Thunks
+export const fetchUsers = createAsyncThunk(
+  'users/fetchUsers',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/users/profile/list_all/')
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch users')
+    }
+  }
+)
+
 const usersSlice = createSlice({
   name: 'users',
   initialState,
   reducers: {
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
-    },
-    setUsers: (state, action: PayloadAction<User[]>) => {
-      state.users = action.payload
-      state.isLoading = false
-    },
-    addUser: (state, action: PayloadAction<User>) => {
-      state.users.push(action.payload)
-    },
-    updateUser: (state, action: PayloadAction<User>) => {
-      const index = state.users.findIndex((u) => u.id === action.payload.id)
-      if (index !== -1) {
-        state.users[index] = action.payload
-      }
-    },
-    deactivateUser: (state, action: PayloadAction<number>) => {
-      const user = state.users.find((u) => u.id === action.payload)
-      if (user) {
-        user.is_active = false
-      }
     },
     selectUser: (state, action: PayloadAction<User | null>) => {
       state.selectedUser = action.payload
@@ -49,14 +44,25 @@ const usersSlice = createSlice({
       state.isLoading = false
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUsers.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        state.users = action.payload
+        state.isLoading = false
+      })
+      .addCase(fetchUsers.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+  }
 })
 
 export const {
   setLoading,
-  setUsers,
-  addUser,
-  updateUser,
-  deactivateUser,
   selectUser,
   setError,
 } = usersSlice.actions

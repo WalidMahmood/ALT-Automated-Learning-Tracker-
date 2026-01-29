@@ -1,5 +1,7 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import type { Entry, EntryStatus, AIDecision } from '@/lib/types'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
+import type { Entry, EntryStatus } from '@/lib/types'
+import api from '@/lib/api'
+import { updateTopicMastery, fetchTopics } from './topicsSlice'
 
 interface EntriesState {
   entries: Entry[]
@@ -10,7 +12,7 @@ interface EntriesState {
     status: EntryStatus | 'all'
     dateRange: { start: string; end: string } | null
     userId: number | null
-    topicId: number | null
+    topic: number | null
   }
 }
 
@@ -23,79 +25,90 @@ const initialState: EntriesState = {
     status: 'all',
     dateRange: null,
     userId: null,
-    topicId: null,
+    topic: null,
   },
 }
+
+// Async Thunks
+export const fetchEntries = createAsyncThunk(
+  'entries/fetchEntries',
+  async (params: any = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/entries/', { params })
+      // If DRF returns results in 'results' key because of pagination
+      return Array.isArray(response.data) ? response.data : response.data.results
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch entries')
+    }
+  }
+)
+
+export const createEntry = createAsyncThunk(
+  'entries/createEntry',
+  async (data: Partial<Entry>, thunkAPI) => {
+    try {
+      const response = await api.post('/entries/', data)
+      const newEntry = response.data
+
+      // Sync topics mastery
+      if (newEntry.topic_details?.mastery) {
+        thunkAPI.dispatch(updateTopicMastery({
+          id: newEntry.topic,
+          mastery: newEntry.topic_details.mastery
+        }))
+      }
+
+      return newEntry
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data || 'Failed to create entry')
+    }
+  }
+)
+
+export const updateEntryThunk = createAsyncThunk(
+  'entries/updateEntry',
+  async ({ id, data }: { id: number; data: Partial<Entry> }, thunkAPI) => {
+    try {
+      const response = await api.put(`/entries/${id}/`, data)
+      const updatedEntry = response.data
+
+      // Sync topics mastery
+      if (updatedEntry.topic_details?.mastery) {
+        thunkAPI.dispatch(updateTopicMastery({
+          id: updatedEntry.topic,
+          mastery: updatedEntry.topic_details.mastery
+        }))
+      }
+
+      return updatedEntry
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data || 'Failed to update entry')
+    }
+  }
+)
+
+export const deleteEntryThunk = createAsyncThunk(
+  'entries/deleteEntry',
+  async (id: number, thunkAPI) => {
+    try {
+      await api.delete(`/entries/${id}/`)
+
+      // On delete, refetch topics to handle hierarchy masteries cascading
+      thunkAPI.dispatch(fetchTopics())
+
+      return id
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data || 'Failed to delete entry')
+    }
+  }
+)
 
 const entriesSlice = createSlice({
   name: 'entries',
   initialState,
   reducers: {
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload
-    },
-    setEntries: (state, action: PayloadAction<Entry[]>) => {
-      state.entries = action.payload
-      state.isLoading = false
-    },
-    addEntry: (state, action: PayloadAction<Entry>) => {
-      state.entries.unshift(action.payload)
-    },
-    updateEntry: (state, action: PayloadAction<Entry>) => {
-      const index = state.entries.findIndex((e) => e.id === action.payload.id)
-      if (index !== -1) {
-        state.entries[index] = action.payload
-      }
-      if (state.selectedEntry?.id === action.payload.id) {
-        state.selectedEntry = action.payload
-      }
-    },
-    deleteEntry: (state, action: PayloadAction<number>) => {
-      state.entries = state.entries.filter((e) => e.id !== action.payload)
-      if (state.selectedEntry?.id === action.payload) {
-        state.selectedEntry = null
-      }
-    },
     selectEntry: (state, action: PayloadAction<Entry | null>) => {
       state.selectedEntry = action.payload
-    },
-    setAIAnalysis: (
-      state,
-      action: PayloadAction<{
-        entryId: number
-        decision: AIDecision
-        confidence: number
-        reasoning: string
-      }>
-    ) => {
-      const entry = state.entries.find((e) => e.id === action.payload.entryId)
-      if (entry) {
-        entry.ai_status = 'analyzed'
-        entry.ai_decision = action.payload.decision
-        entry.ai_confidence = action.payload.confidence
-        entry.ai_reasoning = action.payload.reasoning
-        entry.ai_analyzed_at = new Date().toISOString()
-      }
-    },
-    overrideEntry: (
-      state,
-      action: PayloadAction<{
-        entryId: number
-        status: EntryStatus
-        reason: string
-        comment: string | null
-        adminId: number
-      }>
-    ) => {
-      const entry = state.entries.find((e) => e.id === action.payload.entryId)
-      if (entry) {
-        entry.status = action.payload.status
-        entry.admin_override = true
-        entry.override_reason = action.payload.reason
-        entry.override_comment = action.payload.comment
-        entry.admin_id = action.payload.adminId
-        entry.override_at = new Date().toISOString()
-      }
     },
     setFilters: (
       state,
@@ -111,17 +124,52 @@ const entriesSlice = createSlice({
       state.isLoading = false
     },
   },
+  extraReducers: (builder) => {
+    builder
+      // Fetch Entries
+      .addCase(fetchEntries.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(fetchEntries.fulfilled, (state, action) => {
+        state.entries = action.payload
+        state.isLoading = false
+      })
+      .addCase(fetchEntries.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+      // Create Entry
+      .addCase(createEntry.fulfilled, (state, action) => {
+        state.entries.unshift(action.payload)
+        // Note: We don't dispatch here directly but could. 
+        // However, the component already has the result.
+        // To be safe and cross-slice, we'll rely on the component or a middleware.
+        // Actually, with Redux Template, we can't dispatch from extraReducers easily.
+        // Let's use thunk response handling in the component or update thunk.
+      })
+      // Update Entry
+      .addCase(updateEntryThunk.fulfilled, (state, action) => {
+        const index = state.entries.findIndex((e) => e.id === action.payload.id)
+        if (index !== -1) {
+          state.entries[index] = action.payload
+        }
+        if (state.selectedEntry?.id === action.payload.id) {
+          state.selectedEntry = action.payload
+        }
+      })
+      // Delete Entry
+      .addCase(deleteEntryThunk.fulfilled, (state, action) => {
+        state.entries = state.entries.filter((e) => e.id !== action.payload)
+        if (state.selectedEntry?.id === action.payload) {
+          state.selectedEntry = null
+        }
+      })
+  },
 })
 
 export const {
-  setLoading,
-  setEntries,
-  addEntry,
-  updateEntry,
-  deleteEntry,
   selectEntry,
-  setAIAnalysis,
-  overrideEntry,
   setFilters,
   clearFilters,
   setError,

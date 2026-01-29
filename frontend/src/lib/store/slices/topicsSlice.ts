@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import type { Topic } from '@/lib/types'
+import api from '@/lib/api'
 
 interface TopicsState {
   topics: Topic[]
@@ -35,6 +36,20 @@ function buildTopicsTree(topics: Topic[]): Topic[] {
   return roots
 }
 
+// Async Thunks
+export const fetchTopics = createAsyncThunk(
+  'topics/fetchTopics',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/topics/')
+      // Handle pagination results
+      return Array.isArray(response.data) ? response.data : response.data.results
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch topics')
+    }
+  }
+)
+
 const initialState: TopicsState = {
   topics: [],
   topicsTree: [],
@@ -66,6 +81,16 @@ const topicsSlice = createSlice({
         state.topicsTree = buildTopicsTree(state.topics)
       }
     },
+    updateTopicMastery: (state, action: PayloadAction<{ id: number; mastery: Topic['mastery'] }>) => {
+      const index = state.topics.findIndex((t) => t.id === action.payload.id)
+      if (index !== -1) {
+        state.topics[index] = {
+          ...state.topics[index],
+          mastery: action.payload.mastery
+        }
+        state.topicsTree = buildTopicsTree(state.topics)
+      }
+    },
     deleteTopic: (state, action: PayloadAction<number>) => {
       state.topics = state.topics.filter((t) => t.id !== action.payload)
       state.topicsTree = buildTopicsTree(state.topics)
@@ -78,6 +103,22 @@ const topicsSlice = createSlice({
       state.isLoading = false
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchTopics.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(fetchTopics.fulfilled, (state, action) => {
+        state.topics = action.payload
+        state.topicsTree = buildTopicsTree(action.payload)
+        state.isLoading = false
+      })
+      .addCase(fetchTopics.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+  }
 })
 
 export const {
@@ -85,6 +126,7 @@ export const {
   setTopics,
   addTopic,
   updateTopic,
+  updateTopicMastery,
   deleteTopic,
   selectTopic,
   setError,

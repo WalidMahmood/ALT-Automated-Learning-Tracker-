@@ -77,6 +77,8 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.topics',
     'apps.training_plans',
+    'apps.entries.apps.EntriesConfig',
+    'apps.leaves.apps.LeavesConfig',
 ]
 
 MIDDLEWARE = [

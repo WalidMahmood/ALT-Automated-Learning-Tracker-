@@ -2,7 +2,7 @@
 Serializers for Topic model
 """
 from rest_framework import serializers
-from .models import Topic
+from .models import Topic, LearnerTopicMastery
 
 
 class TopicSerializer(serializers.ModelSerializer):
@@ -14,6 +14,7 @@ class TopicSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False
     )
+    mastery = serializers.SerializerMethodField()
     
     class Meta:
         model = Topic
@@ -24,11 +25,48 @@ class TopicSerializer(serializers.ModelSerializer):
             'depth',
             'benchmark_hours',
             'difficulty',
+            'mastery',
             'is_active',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'depth', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'depth', 'mastery', 'created_at', 'updated_at']
+
+    def get_mastery(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return {'progress': 0, 'is_locked': False, 'total_hours': 0, 'lock_reason': None}
+            
+        user = request.user
+        if not user or user.is_anonymous:
+            return None
+        
+        mastery = LearnerTopicMastery.objects.filter(user=user, topic=obj).first()
+        
+        # Calculate lock reason if locked
+        lock_reason = None
+        if mastery and mastery.is_locked:
+            # 1. Check if the topic itself has 100% progress
+            if mastery.current_progress >= 100:
+                lock_reason = "this topic"
+            else:
+                # 2. Check if locked by an ancestor
+                curr = obj.parent
+                while curr:
+                    anc_mastery = LearnerTopicMastery.objects.filter(user=user, topic=curr).first()
+                    if anc_mastery and anc_mastery.is_locked:
+                        lock_reason = f"ancestor '{curr.name}'"
+                        break
+                    curr = curr.parent
+        
+        if mastery:
+            return {
+                'progress': mastery.current_progress,
+                'is_locked': mastery.is_locked,
+                'total_hours': mastery.total_hours,
+                'lock_reason': lock_reason
+            }
+        return {'progress': 0, 'is_locked': False, 'total_hours': 0, 'lock_reason': None}
 
 
 class TopicCreateUpdateSerializer(serializers.ModelSerializer):

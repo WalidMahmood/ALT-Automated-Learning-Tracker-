@@ -1,8 +1,6 @@
-
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
-import { setLeaveModalOpen } from '@/lib/store/slices/uiSlice'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,30 +17,52 @@ import {
   Users,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { mockEntries, mockUsers, mockTopics, mockLeaveRequests, mockTrainingPlans } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
 import { DrillDownModal } from '@/components/dashboard/drill-down-modal'
-import type { Entry } from '@/lib/types'
+import type { Entry, User, Topic, TrainingPlan } from '@/lib/types'
 import { EntryDetailModal } from '@/components/admin/entry-detail-modal'
 import { OverrideModal } from '@/components/admin/override-modal'
 
+import { fetchEntries } from '@/lib/store/slices/entriesSlice'
+import { fetchTopics } from '@/lib/store/slices/topicsSlice'
+import { fetchTrainingPlans, fetchUserAssignments } from '@/lib/store/slices/trainingPlansSlice'
+import { fetchUsers } from '@/lib/store/slices/usersSlice'
+import { fetchLeaveRequests } from '@/lib/store/slices/leaveRequestsSlice'
+
 export default function DashboardPage() {
+  const dispatch = useAppDispatch()
+
+  useEffect(() => {
+    dispatch(fetchEntries({}))
+    dispatch(fetchTopics())
+    dispatch(fetchTrainingPlans())
+    dispatch(fetchUsers())
+    dispatch(fetchLeaveRequests())
+    dispatch(fetchUserAssignments())
+  }, [dispatch])
+
   return <DashboardContent />
 }
 
 function DashboardContent() {
   const { user } = useAppSelector((state) => state.auth)
+  const { entries } = useAppSelector((state) => state.entries)
+  const { topics } = useAppSelector((state) => state.topics)
+  const { users } = useAppSelector((state) => state.users)
+  const { requests: leaveRequests } = useAppSelector((state) => state.leaveRequests)
+  const { plans, userAssignments } = useAppSelector((state) => state.trainingPlans)
+
   const isAdmin = user?.role === 'admin'
 
   // Calculate stats
   const stats = useMemo(() => {
     if (isAdmin) {
-      const pending = mockEntries.filter((e) => e.status === 'pending').length
-      const flagged = mockEntries.filter((e) => e.status === 'flagged').length
-      const approved = mockEntries.filter((e) => e.status === 'approved').length
-      const pendingLeaves = mockLeaveRequests.filter((l) => l.status === 'pending').length
-      const totalLearners = mockUsers.filter((u) => u.role === 'learner' && u.is_active).length
-      const totalHours = mockEntries.reduce((sum, e) => sum + e.hours, 0)
+      const pending = entries.filter((e) => e.status === 'pending').length
+      const flagged = entries.filter((e) => e.status === 'flagged').length
+      const approved = entries.filter((e) => e.status === 'approved').length
+      const pendingLeaves = leaveRequests.filter((l) => l.status === 'approved').length // approved in our system means active
+      const totalLearners = users.filter((u) => u.role === 'learner' && u.is_active).length
+      const totalHours = entries.reduce((sum, e) => sum + e.hours, 0)
 
       return {
         pending,
@@ -55,7 +75,7 @@ function DashboardContent() {
     }
 
     // Learner stats
-    const userEntries = mockEntries.filter((e) => e.user_id === user?.id)
+    const userEntries = entries.filter((e) => e.user === user?.id)
     const approved = userEntries.filter((e) => e.status === 'approved').length
     const pending = userEntries.filter((e) => e.status === 'pending').length
     const totalHours = userEntries.reduce((sum, e) => sum + e.hours, 0)
@@ -66,7 +86,7 @@ function DashboardContent() {
       totalHours,
       totalEntries: userEntries.length,
     }
-  }, [isAdmin, user?.id])
+  }, [isAdmin, entries, leaveRequests, users, user?.id])
 
   return (
     <div className="space-y-6">
@@ -82,15 +102,37 @@ function DashboardContent() {
       </div>
 
       {isAdmin ? (
-        <AdminDashboard stats={stats} />
+        <AdminDashboard
+          stats={stats}
+          entries={entries}
+          users={users}
+          topics={topics}
+        />
       ) : (
-        <LearnerDashboard stats={stats} user={user} />
+        <LearnerDashboard
+          stats={stats}
+          user={user}
+          entries={entries}
+          topics={topics}
+          plans={plans}
+          assignments={userAssignments}
+        />
       )}
     </div>
   )
 }
 
-function AdminDashboard({ stats }: { stats: any }) {
+function AdminDashboard({
+  stats,
+  entries,
+  users,
+  topics
+}: {
+  stats: any,
+  entries: Entry[],
+  users: User[],
+  topics: Topic[]
+}) {
   // Drill-down Modal State
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
@@ -109,7 +151,7 @@ function AdminDashboard({ stats }: { stats: any }) {
   const [history, setHistory] = useState<any[]>([])
 
   const openPending = () => {
-    const pendingAndFlagged = mockEntries.filter(
+    const pendingAndFlagged = entries.filter(
       (e) => e.status === 'flagged' || e.status === 'pending'
     )
     const newState = { title: 'Pending Approvals', entries: pendingAndFlagged, type: 'entries', topicId: null }
@@ -122,16 +164,16 @@ function AdminDashboard({ stats }: { stats: any }) {
   }
 
   const openTopicUsers = (topicId: number, topicName: string) => {
-    const topicEntries = mockEntries.filter((e) => e.topic_id === topicId)
+    const topicEntries = entries.filter((e) => e.topic === topicId)
 
     const userMap = new Map<number, { userId: number; name: string; entryCount: number; totalHours: number }>()
     topicEntries.forEach(entry => {
-      const user = mockUsers.find(u => u.id === entry.user_id)
-      if (!user) return
-      const existing = userMap.get(user.id) || { userId: user.id, name: user.name, entryCount: 0, totalHours: 0 }
+      const u = users.find(u => u.id === entry.user)
+      if (!u) return
+      const existing = userMap.get(u.id) || { userId: u.id, name: u.name, entryCount: 0, totalHours: 0 }
       existing.entryCount++
       existing.totalHours += entry.hours
-      userMap.set(user.id, existing)
+      userMap.set(u.id, existing)
     })
 
     const usersList = Array.from(userMap.values())
@@ -146,12 +188,12 @@ function AdminDashboard({ stats }: { stats: any }) {
   }
 
   const handleUserClick = (userId: number) => {
-    const entries = mockEntries.filter(e => e.user_id === userId && e.topic_id === selectedTopicId)
-    const user = mockUsers.find(u => u.id === userId)
-    const newState = { title: `${user?.name}'s Entries`, entries, type: 'entries', topicId: selectedTopicId }
+    const userEntries = entries.filter(e => e.user === userId && e.topic === selectedTopicId)
+    const u = users.find(u => u.id === userId)
+    const newState = { title: `${u?.name}'s Entries`, entries: userEntries, type: 'entries', topicId: selectedTopicId }
 
     setModalTitle(newState.title)
-    setModalEntries(entries)
+    setModalEntries(userEntries)
     setViewType('entries' as any)
     setHistory(prev => [...prev, newState])
   }
@@ -187,8 +229,8 @@ function AdminDashboard({ stats }: { stats: any }) {
   const topicStats = useMemo(() => {
     const statsMap = new Map<number, { id: number; name: string; entries: number; hours: number; flagged: number }>()
 
-    mockEntries.forEach((entry) => {
-      const topic = mockTopics.find((t) => t.id === entry.topic_id)
+    entries.forEach((entry) => {
+      const topic = topics.find((t) => t.id === entry.topic)
       if (!topic) return
 
       const existing = statsMap.get(topic.id) || { id: topic.id, name: topic.name, entries: 0, hours: 0, flagged: 0 }
@@ -201,7 +243,7 @@ function AdminDashboard({ stats }: { stats: any }) {
     return Array.from(statsMap.values())
       .sort((a, b) => b.entries - a.entries)
       .slice(0, 5)
-  }, [])
+  }, [entries, topics])
 
   const totalPendingApprovals = stats.pending + stats.flagged
 
@@ -270,12 +312,12 @@ function AdminDashboard({ stats }: { stats: any }) {
         <Link to="/admin/leave">
           <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Leave Requests</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Leaves</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.pendingLeaves}</div>
-              <p className="text-xs text-muted-foreground">Active requests</p>
+              <p className="text-xs text-muted-foreground">approved leaves</p>
             </CardContent>
           </Card>
         </Link>
@@ -315,9 +357,6 @@ function AdminDashboard({ stats }: { stats: any }) {
           </div>
         </CardContent>
       </Card>
-
-
-
 
       {/* Quick Actions */}
       <Card>
@@ -360,12 +399,18 @@ function AdminDashboard({ stats }: { stats: any }) {
 function LearnerDashboard({
   stats,
   user,
+  entries,
+  topics,
+  plans,
+  assignments,
 }: {
   stats: any
-  user: typeof mockUsers[0] | null
+  user: User | null
+  entries: Entry[]
+  topics: Topic[]
+  plans: TrainingPlan[]
+  assignments: any[]
 }) {
-  const dispatch = useAppDispatch()
-
   // Drill-down Modal State
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
@@ -378,7 +423,7 @@ function LearnerDashboard({
   }
 
   // Get user's entries
-  const userEntries = mockEntries.filter((e) => e.user_id === user?.id)
+  const userEntries = entries.filter((e) => e.user === user?.id)
 
   // Recent entries for display
   const recentEntries = [...userEntries]
@@ -386,8 +431,8 @@ function LearnerDashboard({
     .slice(0, 5)
 
   // Get user's training plan
-  const userPlan = mockTrainingPlans.find((plan) =>
-    plan.assignments.some((a) => a.user_id === user?.id)
+  const userPlan = plans.find((plan) =>
+    assignments.some((a) => a.plan === plan.id)
   )
 
   return (
@@ -485,7 +530,7 @@ function LearnerDashboard({
             ) : (
               <div className="space-y-4">
                 {recentEntries.map((entry) => {
-                  const topic = mockTopics.find((t) => t.id === entry.topic_id)
+                  const topic = topics.find((t) => t.id === entry.topic)
 
                   return (
                     <div
@@ -545,9 +590,9 @@ function LearnerDashboard({
             {userPlan ? (
               <div className="space-y-4">
                 {userPlan.plan_topics.slice(0, 4).map((pt) => {
-                  const topic = mockTopics.find((t) => t.id === pt.topic_id)
-                  const userHours = mockEntries
-                    .filter((e) => e.user_id === user?.id && e.topic_id === pt.topic_id && e.status === 'approved')
+                  const topic = topics.find((t) => t.id === pt.topic_id)
+                  const userHours = entries
+                    .filter((e) => e.user === user?.id && e.topic === pt.topic_id && e.status === 'approved')
                     .reduce((sum, e) => sum + e.hours, 0)
                   const progress = Math.min(100, (userHours / pt.expected_hours) * 100)
 
@@ -587,7 +632,7 @@ function LearnerDashboard({
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
             <Button variant="outline" className="h-auto flex-col gap-2 p-4 bg-transparent" asChild>
               <Link to="/calendar">
                 <Calendar className="h-5 w-5" />
@@ -599,14 +644,6 @@ function LearnerDashboard({
                 <TrendingUp className="h-5 w-5" />
                 <span>View Progress</span>
               </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto flex-col gap-2 p-4 bg-transparent"
-              onClick={() => dispatch(setLeaveModalOpen(true))}
-            >
-              <Clock className="h-5 w-5" />
-              <span>Request Leave</span>
             </Button>
           </div>
         </CardContent>
