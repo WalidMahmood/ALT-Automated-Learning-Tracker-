@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { User, Mail, Calendar, TrendingUp } from 'lucide-react'
+import { Mail, Calendar } from 'lucide-react'
 import type { User as UserType } from '@/lib/types'
 
 interface UserProfileModalProps {
@@ -29,15 +29,15 @@ export function UserProfileModal({ user, open, onOpenChange }: UserProfileModalP
 
                 <div className="flex flex-col items-center py-6 border-b border-border">
                     <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold mb-4">
-                        {user.name.charAt(0)}
+                        {(user.full_name || user.name).charAt(0)}
                     </div>
-                    <h2 className="text-xl font-bold">{user.name}</h2>
+                    <h2 className="text-xl font-bold">{user.full_name || user.name}</h2>
                     <div className="flex items-center gap-1 text-muted-foreground text-sm">
                         <Mail className="h-3 w-3" />
                         <span>{user.email}</span>
                     </div>
-                    <Badge variant="secondary" className="mt-2">
-                        {user.is_active ? 'Active' : 'Inactive'} Learner
+                    <Badge variant="secondary" className="mt-2 capitalize">
+                        {user.role} • {user.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                 </div>
 

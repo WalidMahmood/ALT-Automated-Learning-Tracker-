@@ -12,6 +12,7 @@ from .serializers import (
     TrainingPlanSerializer,
     TrainingPlanCreateUpdateSerializer,
     AssignUsersSerializer,
+    PlanAssignmentSerializer,
 )
 from apps.users.permissions import IsAdmin
 from apps.users.models import User
@@ -176,3 +177,17 @@ class TrainingPlanAssignView(APIView):
             'message': f'Assigned {assigned_count} users to plan',
             'plan': TrainingPlanSerializer(plan).data
         })
+
+
+class UserAssignmentsView(generics.ListAPIView):
+    """
+    GET /api/training-plans/assignments/my_assignments/ - List user's assignments
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = PlanAssignmentSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return PlanAssignment.objects.filter(
+            user=self.request.user
+        ).select_related('plan').prefetch_related('plan__plan_topics__topic')

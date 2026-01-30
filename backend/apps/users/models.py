@@ -48,6 +48,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text='Must be @brainstation-23.com domain'
     )
     
+    full_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text='Full name of the user'
+    )
+    
     # Profile fields
     github_url = models.URLField(
         max_length=500,
@@ -159,4 +166,4 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.save()
     
     def __str__(self):
-        return f"{self.email} ({self.get_role_display()})"
+        return f"{self.full_name if self.full_name else self.email} ({self.get_role_display()})"

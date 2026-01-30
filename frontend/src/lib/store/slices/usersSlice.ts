@@ -22,9 +22,45 @@ export const fetchUsers = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/users/profile/list_all/')
-      return response.data
+      return Array.isArray(response.data) ? response.data : response.data.results
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch users')
+    }
+  }
+)
+
+export const createUserThunk = createAsyncThunk(
+  'users/createUser',
+  async (data: any, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/users/', data)
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to create user')
+    }
+  }
+)
+
+export const updateUserThunk = createAsyncThunk(
+  'users/updateUser',
+  async ({ id, data }: { id: number; data: any }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/users/${id}/`, data)
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to update user')
+    }
+  }
+)
+
+export const deleteUserThunk = createAsyncThunk(
+  'users/deleteUser',
+  async (id: number, { rejectWithValue }) => {
+    try {
+      await api.delete(`/users/${id}/`)
+      return id
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to delete user')
     }
   }
 )
@@ -57,6 +93,21 @@ const usersSlice = createSlice({
       .addCase(fetchUsers.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload as string
+      })
+      // Create User
+      .addCase(createUserThunk.fulfilled, (state, action) => {
+        state.users.unshift(action.payload)
+      })
+      // Update User
+      .addCase(updateUserThunk.fulfilled, (state, action) => {
+        const index = state.users.findIndex(u => u.id === action.payload.id)
+        if (index !== -1) {
+          state.users[index] = action.payload
+        }
+      })
+      // Delete User
+      .addCase(deleteUserThunk.fulfilled, (state, action) => {
+        state.users = state.users.filter(u => u.id !== action.payload)
       })
   }
 })

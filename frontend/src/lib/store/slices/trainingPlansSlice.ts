@@ -36,9 +36,21 @@ export const fetchUserAssignments = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/training-plans/assignments/my_assignments/')
-      return response.data
+      return Array.isArray(response.data) ? response.data : response.data.results
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch assignments')
+    }
+  }
+)
+
+export const assignPlanThunk = createAsyncThunk(
+  'trainingPlans/assignPlan',
+  async ({ planId, userIds }: { planId: number; userIds: number[] }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/training-plans/${planId}/assign/`, { user_ids: userIds })
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to assign plan')
     }
   }
 )
@@ -84,6 +96,16 @@ const trainingPlansSlice = createSlice({
       .addCase(fetchUserAssignments.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload as string
+      })
+      // Assign Plan
+      .addCase(assignPlanThunk.fulfilled, (state, action) => {
+        const updatedPlan = action.payload.plan
+        if (updatedPlan) {
+          const index = state.plans.findIndex(p => p.id === updatedPlan.id)
+          if (index !== -1) {
+            state.plans[index] = updatedPlan
+          }
+        }
       })
   }
 })

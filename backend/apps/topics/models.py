@@ -107,131 +107,160 @@ class LearnerTopicMastery(models.Model):
     def __str__(self):
         return f"{self.user.email} - {self.topic.name} ({self.current_progress}%)"
 
-    def update_mastery(self, progress, hours, entry_date):
-        """Update progress and handle propagation"""
-        self.current_progress = max(self.current_progress, progress)
-        self.total_hours += hours
-        if not self.last_entry_at or entry_date > self.last_entry_at.date():
-             # Store highest date seen
-             pass 
-
-        if self.current_progress >= 100:
+    def update_mastery(self, progress, hours, is_completed, entry_date):
+        """
+        Update leaf progress and trigger automated parent calculation.
+        """
+        if is_completed:
+            self.current_progress = 100
             self.is_locked = True
         
+        self.total_hours += hours
         self.save()
         
         # Propagation Logic
         if self.is_locked:
             self.propagate_down()
-            self.propagate_up()
+        
+        # Always propagate up to update parent averages
+        self.propagate_up()
 
     def recalculate_mastery(self, trigger_propagation=True):
         """
-        Scan all active entries to rebuild mastery state.
-        Useful after deletion or bulk updates.
+        Scan all active entries and children to rebuild mastery state.
+        For leaf topics: Uses entry status.
+        For parents: Uses child averages.
         """
         from apps.entries.models import Entry
-        entries = Entry.objects.filter(
-            user=self.user,
-            topic=self.topic,
-            is_active=True
-        ).order_by('date', 'created_at')
+        
+        # Check if topic is leaf (no active children)
+        children = Topic.objects.filter(parent=self.topic, is_active=True)
+        has_children = children.exists()
 
-        was_locked = self.is_locked
+        if not has_children:
+            # Leaf logic: check entries
+            entries = Entry.objects.filter(
+                user=self.user,
+                topic=self.topic,
+                is_active=True
+            ).order_by('date', 'created_at')
 
-        if not entries.exists():
-            self.current_progress = 0
-            self.total_hours = 0
-            self.is_locked = False
-            self.last_entry_at = None
+            if not entries.exists():
+                self.current_progress = 0
+                self.total_hours = 0
+                self.is_locked = False
+                self.last_entry_at = None
+            else:
+                self.total_hours = sum(e.hours for e in entries)
+                # If any entry is completed, progress is 100%
+                if entries.filter(is_completed=True).exists():
+                    self.current_progress = 100
+                    self.is_locked = True
+                else:
+                    self.current_progress = entries.order_by('-progress_percent').first().progress_percent
+                    self.is_locked = self.current_progress >= 100
+                
+                self.last_entry_at = entries.last().created_at
         else:
-            total_h = sum(e.hours for e in entries)
-            latest_entry = entries.last()
+            # Parent logic: Average of children
+            total_calc_progress = 0
+            count = children.count()
             
-            self.total_hours = total_h
-            self.current_progress = latest_entry.progress_percent
-            self.last_entry_at = latest_entry.created_at
-            
-            if self.current_progress >= 100:
+            for child in children:
+                child_m, _ = LearnerTopicMastery.objects.get_or_create(
+                    user=self.user,
+                    topic=child
+                )
+                total_calc_progress += child_m.current_progress
+
+            # Check for direct completion on the parent
+            direct_entries = Entry.objects.filter(user=self.user, topic=self.topic, is_active=True)
+            parent_is_directly_completed = direct_entries.filter(is_completed=True).exists()
+
+            if parent_is_directly_completed:
+                self.current_progress = 100
                 self.is_locked = True
             else:
-                self.is_locked = False
+                self.current_progress = total_calc_progress / count if count > 0 else 0
+                
+                # Parent is locked only if ALL children are 100% AND locked
+                all_children_locked = True
+                for child in children:
+                    child_m, _ = LearnerTopicMastery.objects.get_or_create(user=self.user, topic=child)
+                    if not child_m.is_locked or child_m.current_progress < 100:
+                        all_children_locked = False
+                        break
+                
+                self.is_locked = all_children_locked
+            
+            child_hours = sum(
+                LearnerTopicMastery.objects.filter(user=self.user, topic__in=children).values_list('total_hours', flat=True)
+            )
+            self.total_hours = sum(e.hours for e in direct_entries) + child_hours
+            
+            if direct_entries.exists():
+                self.last_entry_at = direct_entries.order_by('-created_at').first().created_at
 
         self.save()
         
         if trigger_propagation:
-            # Always propagate to ensure siblings/parents/children sync
-            self.propagate_down()
             self.propagate_up()
+            if self.is_locked:
+                self.propagate_down()
 
     def propagate_down(self):
         """
-        Reactive down-propagation. 
-        Children are locked if parent is locked OR if they are 100% themselves.
+        Parent mastered -> All descendants mastered.
         """
+        if not self.is_locked:
+            return
+
         children = Topic.objects.filter(parent=self.topic, is_active=True)
         for child in children:
             child_mastery, _ = LearnerTopicMastery.objects.get_or_create(
                 user=self.user,
                 topic=child
             )
-            
-            was_locked = child_mastery.is_locked
-            
-            # If parent is locked, child MUST be locked/100%
-            if self.is_locked:
-                child_mastery.is_locked = True
+            if not child_mastery.is_locked:
                 child_mastery.current_progress = 100
+                child_mastery.is_locked = True
                 child_mastery.save()
-            else:
-                # Parent is NOT locking this child.
-                # Revert child to its actual progress from entries
-                child_mastery.recalculate_mastery(trigger_propagation=False)
-            
-            # Continue propagation if child state actually changed
-            if child_mastery.is_locked != was_locked:
                 child_mastery.propagate_down()
 
     def propagate_up(self):
         """
-        Reactive up-propagation.
-        Parent is 100% only if ALL direct children are 100%.
+        Update parent's progress based on children averages.
         """
         if not self.topic.parent:
             return
 
         parent = self.topic.parent
         siblings = Topic.objects.filter(parent=parent, is_active=True)
+        sibling_count = siblings.count()
         
+        if sibling_count == 0:
+            return
+
+        total_progress = 0
         all_mastered = True
+        
         for sibling in siblings:
             sibling_mastery, _ = LearnerTopicMastery.objects.get_or_create(
                 user=self.user,
                 topic=sibling
             )
+            total_progress += sibling_mastery.current_progress
             if not sibling_mastery.is_locked or sibling_mastery.current_progress < 100:
                 all_mastered = False
-                break
         
         parent_mastery, _ = LearnerTopicMastery.objects.get_or_create(
             user=self.user,
             topic=parent
         )
         
-        was_locked = parent_mastery.is_locked
-        if all_mastered:
-            parent_mastery.is_locked = True
-            parent_mastery.current_progress = 100
-        else:
-            # If not all children mastered, parent is unlocked 
-            # (unless fixed manually, but we follow auto-propagation)
-            parent_mastery.is_locked = False
-            # Recalculate parent progress from its own entries if any
-            parent_mastery.recalculate_mastery(trigger_propagation=False)
-
-        if parent_mastery.is_locked != was_locked:
-            parent_mastery.save()
-            parent_mastery.propagate_up()
-            # If parent unlocked, we MUST tell other children/siblings to check themselves
-            if not parent_mastery.is_locked:
-                parent_mastery.propagate_down()
+        parent_mastery.current_progress = total_progress / sibling_count
+        parent_mastery.is_locked = all_mastered
+        parent_mastery.save()
+        
+        # Continue up
+        parent_mastery.propagate_up()

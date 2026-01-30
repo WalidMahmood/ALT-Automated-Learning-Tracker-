@@ -72,6 +72,10 @@ class Entry(models.Model):
         blank=True,
         help_text="Blocker details if any"
     )
+    is_completed = models.BooleanField(
+        default=False,
+        help_text="True if the learner has finished this topic"
+    )
 
     # AI Analysis Fields
     ai_status = models.CharField(

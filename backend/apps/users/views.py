@@ -2,7 +2,7 @@
 API Views for user authentication and profile management
 """
 import logging
-from rest_framework import status, generics
+from rest_framework import status, generics, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,6 +14,7 @@ from .models import User
 from .serializers import (
     LoginSerializer,
     UserSerializer,
+    UserCreateSerializer,
     UserProfileSerializer,
     TokenSerializer,
 )
@@ -46,11 +47,16 @@ class LoginView(APIView):
                 'refresh': str(refresh),
                 'user': UserSerializer(user).data,
             }, status=status.HTTP_200_OK)
+        except serializers.ValidationError as e:
+            return Response(
+                e.detail,
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         except Exception as e:
             logger.error(f"Login failed: {str(e)}")
             return Response(
-                {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {'error': 'An unexpected error occurred'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
@@ -110,6 +116,11 @@ class UserListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UserCreateSerializer
+        return UserSerializer
     
     def get_queryset(self):
         """Filter active users, optionally by role"""

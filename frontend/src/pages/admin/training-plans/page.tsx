@@ -39,6 +39,7 @@ import { Navigate } from 'react-router-dom'
 import { useEffect, useMemo } from 'react'
 import { Filter } from 'lucide-react'
 import api from '@/lib/api'
+import { getDescendantTopics } from '@/lib/hierarchy'
 
 export default function TrainingPlansPage() {
     const { user } = useAppSelector((state) => state.auth)
@@ -340,22 +341,35 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
         const topic = topics.find(t => t.id === topicId)
         if (!topic) return
 
-        // Use topic_id or topic.id for comparison
-        if (formData.plan_topics?.some(pt => (pt.topic_id || pt.topic?.id) === topicId)) {
-            return
+        // Create a list of topics to add (the topic itself + all its descendants)
+        const descendants = getDescendantTopics(topicId, topics)
+        const topicsToAdd = [topic, ...descendants]
+
+        const currentPlanTopics = formData.plan_topics || []
+        const newTopics: PlanTopic[] = []
+
+        let nextSequence = currentPlanTopics.length + 1
+
+        for (const t of topicsToAdd) {
+            // Check if already in plan (using topic_id or topic.id)
+            if (currentPlanTopics.some(pt => (pt.topic_id || pt.topic?.id) === t.id)) {
+                continue
+            }
+
+            newTopics.push({
+                topic_id: t.id,
+                topic: t,
+                expected_hours: t.benchmark_hours,
+                sequence_order: nextSequence++
+            } as PlanTopic)
         }
 
-        const newPlanTopic: Partial<PlanTopic> = {
-            topic_id: topicId,
-            topic: topic, // Include full topic for immediate UI update
-            expected_hours: topic.benchmark_hours,
-            sequence_order: (formData.plan_topics?.length || 0) + 1
+        if (newTopics.length > 0) {
+            setFormData({
+                ...formData,
+                plan_topics: [...currentPlanTopics, ...newTopics]
+            })
         }
-
-        setFormData({
-            ...formData,
-            plan_topics: [...(formData.plan_topics || []), newPlanTopic as PlanTopic]
-        })
     }
 
     const handleRemoveTopic = (topicId: number) => {
@@ -491,52 +505,124 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                                         <p className="text-sm text-muted-foreground font-medium">No topics added yet</p>
                                     </div>
                                 ) : (
-                                    formData.plan_topics.map((pt, index) => {
-                                        // Fallback to embedded topic data if not found in global list (e.g. for soft-deleted topics)
-                                        const topicName = topics.find(t => t.id === pt.topic_id)?.name || pt.topic?.name || 'Unknown Topic'
+                                    (() => {
+                                        // Sort all topics by parent/child relationship and sequence
+                                        const planTopics = [...formData.plan_topics].sort((a, b) => (a.sequence_order || 0) - (b.sequence_order || 0))
 
-                                        return (
-                                            <div key={`${pt.topic_id}-${index}`} className="flex items-center gap-4 p-3 rounded-lg border bg-card">
-                                                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
-                                                    {index + 1}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-sm">{topicName}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                                                    {isView ? (
-                                                        <span className="text-sm font-medium w-12 text-center">{Number(pt.expected_hours).toFixed(1)}</span>
-                                                    ) : (
-                                                        <Input
-                                                            type="number"
-                                                            className="w-20 h-8"
-                                                            value={pt.expected_hours}
-                                                            onChange={(e) => handleUpdateHours(pt.topic_id, Number(e.target.value))}
-                                                            step="0.1"
-                                                            min="0"
-                                                        />
-                                                    )}
-                                                    <span className="text-xs text-muted-foreground">h</span>
-                                                </div>
-                                                {!isView && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                                        onClick={(e) => {
-                                                            e.preventDefault()
-                                                            handleRemoveTopic(pt.topic_id)
-                                                        }}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        )
-                                    })
+                                        // Helper to render a topic and its children
+                                        const renderTopicTree = (parentId: number | null, level: number) => {
+                                            const itemsAtThisLevel = planTopics.filter(pt => {
+                                                const tid = pt.topic_id || pt.topic?.id || 0
+                                                const topic = topics.find(t => t.id === tid)
+                                                if (!topic) return false
+
+                                                if (parentId !== null) {
+                                                    return topic.parent_id === parentId
+                                                } else {
+                                                    // At root level: show topics whose parent is NOT in the plan
+                                                    return !planTopics.some(other => (other.topic_id || other.topic?.id) === topic.parent_id)
+                                                }
+                                            })
+
+                                            return itemsAtThisLevel.map((pt, index) => {
+                                                const topicId = pt.topic_id || pt.topic?.id || 0
+                                                const topic = topics.find(t => t.id === topicId)
+                                                const topicName = topic?.name || pt.topic?.name || 'Unknown Topic'
+
+                                                // Check if this topic has children *that are also in the plan*
+                                                const planDescendants = planTopics.filter(other => {
+                                                    let curr = topics.find(t => t.id === (other.topic_id || other.topic?.id))
+                                                    while (curr?.parent_id) {
+                                                        if (curr.parent_id === topicId) return true
+                                                        curr = topics.find(t => t.id === curr?.parent_id)
+                                                    }
+                                                    return false
+                                                })
+                                                const hasPlanChildren = planDescendants.length > 0
+
+                                                return (
+                                                    <div key={`${topicId}-${level}-${index}`} className="space-y-1">
+                                                        <div
+                                                            className={cn(
+                                                                "flex items-center gap-3 p-2 rounded-lg border transition-colors",
+                                                                hasPlanChildren ? "bg-muted/50 border-dashed" : "bg-card"
+                                                            )}
+                                                            style={{ marginLeft: `${level * 24}px` }}
+                                                        >
+                                                            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold shrink-0">
+                                                                {level === 0 ? index + 1 : '•'}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className={cn("truncate text-sm", hasPlanChildren ? "font-semibold" : "font-medium")}>
+                                                                        {topicName}
+                                                                    </p>
+                                                                    {hasPlanChildren && (
+                                                                        <Badge variant="outline" className="text-[9px] h-4 py-0 px-1 font-normal opacity-70">Category</Badge>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                                                {isView || hasPlanChildren ? (
+                                                                    <div className="flex items-center min-w-[3rem] justify-center">
+                                                                        <span className={cn(
+                                                                            "text-sm font-medium",
+                                                                            hasPlanChildren ? "text-primary" : ""
+                                                                        )}>
+                                                                            {hasPlanChildren
+                                                                                ? planDescendants.reduce((sum, d) => sum + Number(d.expected_hours), Number(pt.expected_hours)).toFixed(1)
+                                                                                : Number(pt.expected_hours).toFixed(1)
+                                                                            }
+                                                                        </span>
+                                                                        {hasPlanChildren && (
+                                                                            <span className="text-[10px] ml-0.5 opacity-60">*</span>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="w-16 h-7 text-xs px-2"
+                                                                        value={pt.expected_hours}
+                                                                        onChange={(e) => handleUpdateHours(topicId, Number(e.target.value))}
+                                                                        step="0.5"
+                                                                        min="0"
+                                                                    />
+                                                                )}
+                                                                <span className="text-[10px] text-muted-foreground w-3">h</span>
+                                                            </div>
+                                                            {!isView && (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault()
+                                                                        handleRemoveTopic(topicId)
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                        {renderTopicTree(topicId, level + 1)}
+                                                    </div>
+                                                )
+                                            })
+                                        }
+
+                                        return renderTopicTree(null, 0)
+                                    })()
                                 )}
+                                {formData.plan_topics && formData.plan_topics.some(pt => {
+                                    const tid = pt.topic_id || pt.topic?.id || 0
+                                    return topics.some(t => t.id === tid && topics.some(other => other.parent_id === t.id && formData.plan_topics?.some(p => (p.topic_id || p.topic?.id) === other.id)))
+                                }) && (
+                                        <p className="text-[10px] text-muted-foreground italic px-2 pt-1 border-t mt-2">
+                                            * Calculated total including all nested sub-topics below.
+                                        </p>
+                                    )}
                             </div>
                         </div>
                     </div>

@@ -35,9 +35,11 @@ export default function LeavePage() {
     const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null)
 
     useEffect(() => {
-        dispatch(fetchLeaveRequests())
-        dispatch(fetchUsers())
-    }, [dispatch])
+        if (user?.role === 'admin') {
+            dispatch(fetchLeaveRequests())
+            dispatch(fetchUsers())
+        }
+    }, [dispatch, user])
 
     // Redirect non-admins
     if (user?.role !== 'admin') {

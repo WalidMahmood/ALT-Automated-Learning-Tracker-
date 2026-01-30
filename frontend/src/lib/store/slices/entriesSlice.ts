@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import type { Entry, EntryStatus } from '@/lib/types'
 import api from '@/lib/api'
-import { updateTopicMastery, fetchTopics } from './topicsSlice'
+import { fetchTopics } from './topicsSlice'
 
 interface EntriesState {
   entries: Entry[]
@@ -50,13 +50,8 @@ export const createEntry = createAsyncThunk(
       const response = await api.post('/entries/', data)
       const newEntry = response.data
 
-      // Sync topics mastery
-      if (newEntry.topic_details?.mastery) {
-        thunkAPI.dispatch(updateTopicMastery({
-          id: newEntry.topic,
-          mastery: newEntry.topic_details.mastery
-        }))
-      }
+      // Refetch topics to update the hierarchy mastery across the app
+      thunkAPI.dispatch(fetchTopics())
 
       return newEntry
     } catch (error: any) {
@@ -72,13 +67,8 @@ export const updateEntryThunk = createAsyncThunk(
       const response = await api.put(`/entries/${id}/`, data)
       const updatedEntry = response.data
 
-      // Sync topics mastery
-      if (updatedEntry.topic_details?.mastery) {
-        thunkAPI.dispatch(updateTopicMastery({
-          id: updatedEntry.topic,
-          mastery: updatedEntry.topic_details.mastery
-        }))
-      }
+      // Refetch topics to update the hierarchy mastery across the app
+      thunkAPI.dispatch(fetchTopics())
 
       return updatedEntry
     } catch (error: any) {

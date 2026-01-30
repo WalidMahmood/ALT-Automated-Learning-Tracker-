@@ -39,7 +39,8 @@ import {
   Lock,
   Target,
 } from 'lucide-react'
-import { Slider } from '@/components/ui/slider'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Progress } from '@/components/ui/progress'
 import type { EntryFormData } from '@/lib/types'
 
 const BLOCKER_OPTIONS = ['Technical', 'Environmental', 'Personal', 'Resource', 'Other'] as const
@@ -65,7 +66,7 @@ export function EntryFormModal() {
 
   const isLeaveDay = leaveRequests.some(
     (l) => {
-      if (l.user_id !== user?.id || l.status !== 'approved') return false
+      if (l.user !== user?.id || l.status !== 'approved') return false
       return selectedDate >= l.start_date && selectedDate <= l.end_date
     }
   )
@@ -76,6 +77,7 @@ export function EntryFormModal() {
     hours: '',
     learned_text: '',
     progress_percent: 0,
+    is_completed: false,
     blockers_text: '',
   })
 
@@ -113,6 +115,7 @@ export function EntryFormModal() {
         hours: hoursStr,
         learned_text: selectedEntry.learned_text,
         progress_percent: selectedEntry.progress_percent,
+        is_completed: selectedEntry.is_completed,
         blockers_text: selectedEntry.blockers_text?.split(':')[1]?.trim() || selectedEntry.blockers_text || '',
       })
 
@@ -129,6 +132,7 @@ export function EntryFormModal() {
         hours: '',
         learned_text: '',
         progress_percent: 0,
+        is_completed: false,
         blockers_text: '',
       })
       setBlockerType('')
@@ -191,7 +195,8 @@ export function EntryFormModal() {
       topic: formData.topic_id,
       hours: parseHours(formData.hours),
       learned_text: formData.learned_text,
-      progress_percent: formData.progress_percent,
+      progress_percent: formData.is_completed ? 100 : 0,
+      is_completed: formData.is_completed,
       blockers_text: blockerType && formData.blockers_text
         ? `${blockerType}: ${formData.blockers_text}`
         : formData.blockers_text || null,
@@ -222,8 +227,15 @@ export function EntryFormModal() {
     )
 
     if (confirmed) {
-      dispatch(deleteEntryThunk(selectedEntry.id))
-      handleClose()
+      setIsSubmitting(true)
+      try {
+        await dispatch(deleteEntryThunk(selectedEntry.id)).unwrap()
+        handleClose()
+      } catch (err) {
+        setSubmitError('Failed to delete entry')
+      } finally {
+        setIsSubmitting(false)
+      }
     }
   }
 
@@ -405,7 +417,9 @@ export function EntryFormModal() {
                           <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
                             <Lock className="h-3 w-3" />
                             <span>
-                              Mastered: Further logging is locked {selectedTopic.mastery.lock_reason ? `by ${selectedTopic.mastery.lock_reason}` : 'for this area'}.
+                              {selectedEntry?.is_completed
+                                ? "Mastered: This entry marked this area as completed."
+                                : `Mastered: Further logging is locked ${selectedTopic.mastery.lock_reason ? `by ${selectedTopic.mastery.lock_reason}` : 'for this area'}.`}
                             </span>
                           </div>
                         )}
@@ -421,37 +435,101 @@ export function EntryFormModal() {
                 )}
               </div>
 
-              {/* Progress Slider (Conceptual Finish) */}
+              {/* Progress Bar (Automated Calculation) */}
               <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/10">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    <Label className="font-semibold">Conceptual Progress</Label>
-                  </div>
-                  <Badge variant="secondary" className="font-mono">
-                    {formData.progress_percent}% Complete
-                  </Badge>
+                  {(() => {
+                    const parentTopic = selectedTopic?.parent_id ? topics.find(t => t.id === selectedTopic.parent_id) : null
+
+                    // Calculate optimistic progress
+                    let displayProgress = selectedTopic?.mastery?.progress || 0
+                    let displayLabel = "Conceptual Progress"
+
+                    if (parentTopic && selectedTopic) {
+                      const siblings = topics.filter(t => t.parent_id === parentTopic.id && t.is_active)
+                      const siblingCount = siblings.length
+
+                      if (siblingCount > 0) {
+                        const otherSiblingsProgress = siblings
+                          .filter(s => s.id !== selectedTopic.id)
+                          .reduce((sum, s) => sum + (s.mastery?.progress || 0), 0)
+
+                        const currentTopicProgress = formData.is_completed ? 100 : 0
+                        displayProgress = (otherSiblingsProgress + currentTopicProgress) / siblingCount
+                        displayLabel = parentTopic.name
+                      }
+                    } else if (selectedTopic) {
+                      displayProgress = formData.is_completed ? 100 : 0
+                      displayLabel = selectedTopic.name
+                    }
+
+                    return (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-primary" />
+                          <Label className="font-semibold">Conceptual Progress</Label>
+                        </div>
+                        <Badge variant="secondary" className="font-mono">
+                          {displayLabel}: {Math.round(displayProgress)}%
+                        </Badge>
+                      </>
+                    )
+                  })()}
                 </div>
 
-                {isViewOnly ? (
-                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${formData.progress_percent}%` }}
+                <div className="space-y-4">
+                  {(() => {
+                    const parentTopic = selectedTopic?.parent_id ? topics.find(t => t.id === selectedTopic.parent_id) : null
+                    let displayProgress = selectedTopic?.mastery?.progress || 0
+
+                    if (parentTopic && selectedTopic) {
+                      const siblings = topics.filter(t => t.parent_id === parentTopic.id && t.is_active)
+                      const siblingCount = siblings.length
+                      if (siblingCount > 0) {
+                        const otherSiblingsProgress = siblings
+                          .filter(s => s.id !== selectedTopic.id)
+                          .reduce((sum, s) => sum + (s.mastery?.progress || 0), 0)
+                        const currentTopicProgress = formData.is_completed ? 100 : 0
+                        displayProgress = (otherSiblingsProgress + currentTopicProgress) / siblingCount
+                      }
+                    } else if (selectedTopic) {
+                      displayProgress = formData.is_completed ? 100 : 0
+                    }
+                    return <Progress value={displayProgress} className="h-2" />
+                  })()}
+                </div>
+
+                {!isViewOnly && (
+                  <div className="flex items-start space-x-3 rounded-md border border-border bg-background p-3 shadow-sm transition-all hover:bg-accent/5">
+                    <Checkbox
+                      id="is_completed"
+                      checked={formData.is_completed}
+                      onCheckedChange={(checked) => setFormData({
+                        ...formData,
+                        is_completed: !!checked
+                      })}
+                      // Allow toggling completion if we are editing an existing entry
+                      disabled={selectedTopic?.mastery?.is_locked && !selectedEntry}
+                      className="mt-1"
                     />
+                    <div className="grid gap-1.5 leading-none">
+                      <label
+                        htmlFor="is_completed"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Mark as Completed
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Toggle if you have finished all sub-tasks and requirements for this area.
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <Slider
-                      value={[formData.progress_percent]}
-                      max={100}
-                      step={1}
-                      onValueChange={(vals) => setFormData({ ...formData, progress_percent: vals[0] })}
-                      disabled={selectedTopic?.mastery?.is_locked}
-                    />
-                    <p className="text-[10px] text-muted-foreground text-center">
-                      Slide to update your mastery. Reaching 100% will lock further entries.
-                    </p>
+                )}
+
+                {isViewOnly && formData.is_completed && (
+                  <div className="flex items-center gap-2 text-xs font-medium text-success bg-success/10 p-2 rounded border border-success/20">
+                    <Check className="h-3 w-3" />
+                    Topic marked as completed in this log.
                   </div>
                 )}
               </div>
@@ -569,7 +647,12 @@ export function EntryFormModal() {
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !formData.topic_id || isLeaveDay || selectedTopic?.mastery?.is_locked}
+                  disabled={
+                    isSubmitting ||
+                    !formData.topic_id ||
+                    isLeaveDay ||
+                    (selectedTopic?.mastery?.is_locked && !selectedEntry)
+                  }
                 >
                   {isSubmitting ? (
                     <>
@@ -586,8 +669,9 @@ export function EntryFormModal() {
               )}
             </DialogFooter>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        )
+        }
+      </DialogContent >
+    </Dialog >
   )
 }

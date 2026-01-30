@@ -42,14 +42,14 @@ class PlanAssignmentSerializer(serializers.ModelSerializer):
         model = PlanAssignment
         fields = [
             'id',
-            'plan_id',
+            'plan',
             'user_id',
             'user',
             'assigned_by_admin_id',
             'assigned_by_admin',
             'assigned_at',
         ]
-        read_only_fields = ['id', 'plan_id', 'assigned_by_admin_id', 'assigned_at']
+        read_only_fields = ['id', 'plan', 'assigned_by_admin_id', 'assigned_at', 'user_id']
 
 
 class TrainingPlanSerializer(serializers.ModelSerializer):

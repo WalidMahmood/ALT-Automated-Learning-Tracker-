@@ -12,7 +12,7 @@ class EntrySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'user_email', 'topic', 'topic_details', 'admin',
             'date', 'hours', 'learned_text', 'progress_percent', 'blockers_text',
-            'status', 'ai_status', 'ai_decision', 'ai_confidence',
+            'is_completed', 'status', 'ai_status', 'ai_decision', 'ai_confidence',
             'ai_reasoning', 'ai_analyzed_at', 'admin_override',
             'override_reason', 'override_comment', 'override_at',
             'is_active', 'created_at', 'updated_at'
@@ -45,23 +45,26 @@ class EntrySerializer(serializers.ModelSerializer):
         new_progress = data.get('progress_percent', 0)
         
         # 1. Check if the topic itself or any ancestor is already mastered (Top-Down Lock)
-        ancestors = []
-        curr = topic
-        while curr:
-            ancestors.append(curr)
-            curr = curr.parent
+        # BUG FIX: Skip this check if we are updating an EXISTING entry. 
+        # This allows users to unmark 'is_completed' for the entry that triggered the lock.
+        if not self.instance:
+            ancestors = []
+            curr = topic
+            while curr:
+                ancestors.append(curr)
+                curr = curr.parent
 
-        mastered_ancestor = LearnerTopicMastery.objects.filter(
-            user=user, 
-            topic__in=ancestors,
-            is_locked=True
-        ).first()
+            mastered_ancestor = LearnerTopicMastery.objects.filter(
+                user=user, 
+                topic__in=ancestors,
+                is_locked=True
+            ).first()
 
-        if mastered_ancestor:
-            source = "this topic" if mastered_ancestor.topic == topic else f"ancestor '{mastered_ancestor.topic.name}'"
-            raise serializers.ValidationError({
-                "topic": f"This area is mastered. Locked by {source}."
-            })
+            if mastered_ancestor:
+                source = "this topic" if mastered_ancestor.topic == topic else f"ancestor '{mastered_ancestor.topic.name}'"
+                raise serializers.ValidationError({
+                    "topic": f"This area is mastered. Locked by {source}."
+                })
             
         # 2. Duplicate Check (Uniqueness)
         queryset = Entry.objects.filter(
@@ -81,60 +84,7 @@ class EntrySerializer(serializers.ModelSerializer):
         # 3. Progress Continuity Check
         # (Ensure they don't decrease progress)
         current_mastery = LearnerTopicMastery.objects.filter(user=user, topic=topic).first()
-        if current_mastery and new_progress < current_mastery.current_progress:
-             raise serializers.ValidationError({
-                "progress_percent": f"Progress cannot decrease. Your current mastery is {current_mastery.current_progress}%."
-            })
-            
-        return data
-
-    def validate(self, data):
-        """
-        Comprehensive mastery and hierarchy validation.
-        """
-        user = self.context['request'].user
-        date = data.get('date')
-        topic = data.get('topic')
-        new_progress = data.get('progress_percent', 0)
-        
-        # 1. Check if the topic itself or any ancestor is already mastered (Top-Down Lock)
-        ancestors = []
-        curr = topic
-        while curr:
-            ancestors.append(curr)
-            curr = curr.parent
-
-        mastered_ancestor = LearnerTopicMastery.objects.filter(
-            user=user, 
-            topic__in=ancestors,
-            is_locked=True
-        ).first()
-
-        if mastered_ancestor:
-            source = "this topic" if mastered_ancestor.topic == topic else f"ancestor '{mastered_ancestor.topic.name}'"
-            raise serializers.ValidationError({
-                "topic": f"This area is mastered. Locked by {source}."
-            })
-            
-        # 2. Duplicate Check (Uniqueness)
-        queryset = Entry.objects.filter(
-            user=user, 
-            date=date, 
-            topic=topic, 
-            is_active=True
-        )
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-            
-        if queryset.exists():
-            raise serializers.ValidationError({
-                "topic": "Topic already entered for this date. Your performance won't be increased by inputting the same topic twice on one day."
-            })
-
-        # 3. Progress Continuity Check
-        # (Ensure they don't decrease progress)
-        current_mastery = LearnerTopicMastery.objects.filter(user=user, topic=topic).first()
-        if current_mastery and new_progress < current_mastery.current_progress:
+        if current_mastery and new_progress < current_mastery.current_progress and not self.instance:
              raise serializers.ValidationError({
                 "progress_percent": f"Progress cannot decrease. Your current mastery is {current_mastery.current_progress}%."
             })

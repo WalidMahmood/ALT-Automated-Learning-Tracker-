@@ -4,6 +4,7 @@ export type UserRole = 'learner' | 'admin'
 export interface User {
   id: number
   email: string
+  full_name: string | null
   name: string
   github_url: string | null
   experience_years: number
@@ -49,6 +50,7 @@ export interface Entry {
   hours: number
   learned_text: string
   progress_percent: number
+  is_completed: boolean
   blockers_text: string | null
   // AI Analysis Fields
   ai_status: 'pending' | 'analyzed' | 'error'
@@ -93,7 +95,7 @@ export interface PlanTopic {
 
 export interface PlanAssignment {
   id: number
-  plan_id: number
+  plan: number
   user_id: number
   user?: User
   assigned_by_admin_id: number | null
@@ -157,6 +159,7 @@ export interface EntryFormData {
   hours: string // HH:MM format
   learned_text: string
   progress_percent: number
+  is_completed: boolean
   blockers_text: string
 }
 

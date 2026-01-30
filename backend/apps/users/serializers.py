@@ -21,6 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'email',
+            'full_name',
             'name',
             'github_url',
             'expertise_level',
@@ -34,7 +35,9 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_name(self, obj):
-        """Generate display name from email"""
+        """Generate display name from full_name or email"""
+        if obj.full_name:
+            return obj.full_name
         if not obj.email:
             return "User"
         return obj.email.split('@')[0].title()
@@ -67,7 +70,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            'id',
             'email',
+            'full_name',
             'password',
             'password_confirm',
             'github_url',
@@ -75,7 +80,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'experience_years',
             'tech_stack',
             'role',
+            'is_active',
         ]
+        read_only_fields = ['id', 'is_active']
     
     def validate_email(self, value):
         """Validate email domain"""
@@ -112,14 +119,16 @@ class LoginSerializer(serializers.Serializer):
     
     def validate(self, attrs):
         """Validate credentials and return user"""
-        email = attrs.get('email')
+        from .models import User
+        email = (attrs.get('email') or '').strip()
+        email = User.objects.normalize_email(email)
         password = attrs.get('password')
         
         masked_email = mask_email(email)
         logger.info(f"LOGIN: Attempting login for email: '{masked_email}'")
         
-        # Validate email domain
-        if not email.endswith('@brainstation-23.com'):
+        # Validate email domain (case-insensitive)
+        if not email.lower().endswith('@brainstation-23.com'):
             logger.info(f"DEBUG LOGIN: Invalid domain for {masked_email}")
             raise serializers.ValidationError(
                 'Email must be @brainstation-23.com domain'
@@ -135,7 +144,7 @@ class LoginSerializer(serializers.Serializer):
         if user:
             logger.info(f"DEBUG LOGIN: Authentication SUCCESS for {mask_email(user.email)}")
         else:
-            logger.info(f"DEBUG LOGIN: Authentication FAILED for {masked_email}")
+            logger.info(f"DEBUG LOGIN: Authentication FAILED for '{email}' (normalized)")
             # Check if user exists to debug password issue
             from .models import User
             try:
@@ -170,6 +179,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'email',
+            'full_name',
             'name',
             'github_url',
             'expertise_level',
@@ -182,7 +192,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email', 'role', 'created_at', 'updated_at']
 
     def get_name(self, obj):
-        """Generate display name from email"""
+        """Generate display name from full_name or email"""
+        if obj.full_name:
+            return obj.full_name
         if not obj.email:
             return "User"
         return obj.email.split('@')[0].title()

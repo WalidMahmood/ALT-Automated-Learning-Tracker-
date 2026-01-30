@@ -19,7 +19,11 @@ import {
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { DrillDownModal } from '@/components/dashboard/drill-down-modal'
-import type { Entry, User, Topic, TrainingPlan } from '@/lib/types'
+import type {
+  Entry, User, Topic,
+  TrainingPlan,
+  PlanAssignment,
+} from '@/lib/types'
 import { EntryDetailModal } from '@/components/admin/entry-detail-modal'
 import { OverrideModal } from '@/components/admin/override-modal'
 
@@ -32,14 +36,19 @@ import { fetchLeaveRequests } from '@/lib/store/slices/leaveRequestsSlice'
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
 
+  const isAdmin = useAppSelector((state) => state.auth.user?.role === 'admin')
+
   useEffect(() => {
     dispatch(fetchEntries({}))
     dispatch(fetchTopics())
     dispatch(fetchTrainingPlans())
-    dispatch(fetchUsers())
     dispatch(fetchLeaveRequests())
     dispatch(fetchUserAssignments())
-  }, [dispatch])
+
+    if (isAdmin) {
+      dispatch(fetchUsers())
+    }
+  }, [dispatch, isAdmin])
 
   return <DashboardContent />
 }
@@ -57,12 +66,12 @@ function DashboardContent() {
   // Calculate stats
   const stats = useMemo(() => {
     if (isAdmin) {
-      const pending = entries.filter((e) => e.status === 'pending').length
-      const flagged = entries.filter((e) => e.status === 'flagged').length
-      const approved = entries.filter((e) => e.status === 'approved').length
-      const pendingLeaves = leaveRequests.filter((l) => l.status === 'approved').length // approved in our system means active
-      const totalLearners = users.filter((u) => u.role === 'learner' && u.is_active).length
-      const totalHours = entries.reduce((sum, e) => sum + e.hours, 0)
+      const pending = (Array.isArray(entries) ? entries : []).filter((e) => e.status === 'pending').length
+      const flagged = (Array.isArray(entries) ? entries : []).filter((e) => e.status === 'flagged').length
+      const approved = (Array.isArray(entries) ? entries : []).filter((e) => e.status === 'approved').length
+      const pendingLeaves = (Array.isArray(leaveRequests) ? leaveRequests : []).filter((l) => l.status === 'approved').length
+      const totalLearners = (Array.isArray(users) ? users : []).filter((u) => u.role === 'learner' && u.is_active).length
+      const totalHours = (Array.isArray(entries) ? entries : []).reduce((sum, e) => sum + parseFloat(e.hours as any), 0)
 
       return {
         pending,
@@ -75,10 +84,10 @@ function DashboardContent() {
     }
 
     // Learner stats
-    const userEntries = entries.filter((e) => e.user === user?.id)
+    const userEntries = (Array.isArray(entries) ? entries : []).filter((e) => e.user === user?.id)
     const approved = userEntries.filter((e) => e.status === 'approved').length
     const pending = userEntries.filter((e) => e.status === 'pending').length
-    const totalHours = userEntries.reduce((sum, e) => sum + e.hours, 0)
+    const totalHours = userEntries.reduce((sum, e) => sum + parseFloat(e.hours as any), 0)
 
     return {
       approved,
@@ -409,7 +418,7 @@ function LearnerDashboard({
   entries: Entry[]
   topics: Topic[]
   plans: TrainingPlan[]
-  assignments: any[]
+  assignments: PlanAssignment[]
 }) {
   // Drill-down Modal State
   const [modalOpen, setModalOpen] = useState(false)
@@ -496,7 +505,7 @@ function LearnerDashboard({
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalHours?.toFixed(1) || 0}h</div>
+            <div className="text-2xl font-bold">{Number(stats.totalHours || 0).toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">Hours logged this month</p>
           </CardContent>
         </Card>
