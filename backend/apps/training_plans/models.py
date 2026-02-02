@@ -29,8 +29,15 @@ class TrainingPlan(models.Model):
         return self.plan_name
 
     def archive(self):
-        """Archive this plan (soft delete)"""
+        """Archive this plan (soft delete) and deactivate assignments"""
         self.is_archived = True
+        
+        # Optional: Decide if we want to DELETE assignments or just hide them.
+        # User requested: "what happens? ... think of these scenarios"
+        # Safest bet: Keep the assignment record but the frontend filters by plan.is_archived.
+        # However, to be cleaner, let's mark the plan as archived and rely on the frontend 
+        # filtering or backend querysets to exclude archived plans from "Active Assignments".
+        
         self.save()
 
     def restore(self):

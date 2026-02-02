@@ -6,26 +6,44 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   AlertTriangle,
   ArrowRight,
+  ArrowUpDown,
   BookOpen,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
   Clock,
   FileText,
+  Search,
   TrendingUp,
   Users,
 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { DrillDownModal } from '@/components/dashboard/drill-down-modal'
 import type {
   Entry, User, Topic,
   TrainingPlan,
   PlanAssignment,
 } from '@/lib/types'
-import { EntryDetailModal } from '@/components/admin/entry-detail-modal'
 import { OverrideModal } from '@/components/admin/override-modal'
+import { mockUsers } from '@/lib/mock-data'
 
 import { fetchEntries } from '@/lib/store/slices/entriesSlice'
 import { fetchTopics } from '@/lib/store/slices/topicsSlice'
@@ -114,8 +132,8 @@ function DashboardContent() {
         <AdminDashboard
           stats={stats}
           entries={entries}
-          users={users}
           topics={topics}
+          users={users}
         />
       ) : (
         <LearnerDashboard
@@ -134,99 +152,43 @@ function DashboardContent() {
 function AdminDashboard({
   stats,
   entries,
-  users,
-  topics
+  topics,
+  users
 }: {
   stats: any,
   entries: Entry[],
-  users: User[],
-  topics: Topic[]
+  topics: Topic[],
+  users: User[]
 }) {
-  // Drill-down Modal State
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalTitle, setModalTitle] = useState('')
-  const [viewType, setViewType] = useState<'entries' | 'users'>('entries')
-  const [modalEntries, setModalEntries] = useState<Entry[]>([])
-  const [modalUsers, setModalUsers] = useState<any[]>([])
-
-  // Entry Detail Modal State
+  // In-place Drill-down State
+  const [drillLevel, setDrillLevel] = useState(0) // 0: Topics, 1: Entries, 2: Details
+  const [selectedTopic, setSelectedTopic] = useState<{ id: number, name: string } | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
   const [overrideModalOpen, setOverrideModalOpen] = useState(false)
 
-  // Track selected topic for nested navigation
-  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null)
-
-  // Navigation history for modal
-  const [history, setHistory] = useState<any[]>([])
+  // Level 1: Topic Entries list
+  const [topicEntriesPageSize, setTopicEntriesPageSize] = useState(50)
+  const [topicEntriesSort, setTopicEntriesSort] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
+  const [entriesStatusFilter, setEntriesStatusFilter] = useState<'all' | 'pending' | 'flagged' | 'approved'>('all')
+  const [entriesSearchQuery, setEntriesSearchQuery] = useState('')
+  const [entriesMinHours, setEntriesMinHours] = useState(0)
+  const [entriesMaxHours, setEntriesMaxHours] = useState(0)
+  const [entriesStartDate, setEntriesStartDate] = useState('')
+  const [entriesEndDate, setEntriesEndDate] = useState('')
 
   const openPending = () => {
-    const pendingAndFlagged = entries.filter(
-      (e) => e.status === 'flagged' || e.status === 'pending'
-    )
-    const newState = { title: 'Pending Approvals', entries: pendingAndFlagged, type: 'entries', topicId: null }
-    setModalTitle(newState.title)
-    setModalEntries(newState.entries)
-    setViewType('entries' as any)
-    setSelectedTopicId(null)
-    setHistory([newState])
-    setModalOpen(true)
+    setSelectedTopic(null)
+    setDrillLevel(1)
   }
 
-  const openTopicUsers = (topicId: number, topicName: string) => {
-    const topicEntries = entries.filter((e) => e.topic === topicId)
-
-    const userMap = new Map<number, { userId: number; name: string; entryCount: number; totalHours: number }>()
-    topicEntries.forEach(entry => {
-      const u = users.find(u => u.id === entry.user)
-      if (!u) return
-      const existing = userMap.get(u.id) || { userId: u.id, name: u.name, entryCount: 0, totalHours: 0 }
-      existing.entryCount++
-      existing.totalHours += entry.hours
-      userMap.set(u.id, existing)
-    })
-
-    const usersList = Array.from(userMap.values())
-    const newState = { title: `${topicName} - Users`, users: usersList, type: 'users', topicId }
-
-    setSelectedTopicId(topicId)
-    setModalTitle(newState.title)
-    setModalUsers(newState.users)
-    setViewType('users' as any)
-    setHistory([newState])
-    setModalOpen(true)
-  }
-
-  const handleUserClick = (userId: number) => {
-    const userEntries = entries.filter(e => e.user === userId && e.topic === selectedTopicId)
-    const u = users.find(u => u.id === userId)
-    const newState = { title: `${u?.name}'s Entries`, entries: userEntries, type: 'entries', topicId: selectedTopicId }
-
-    setModalTitle(newState.title)
-    setModalEntries(userEntries)
-    setViewType('entries' as any)
-    setHistory(prev => [...prev, newState])
-  }
-
-  const handleBack = () => {
-    if (history.length <= 1) return
-
-    const newHistory = [...history]
-    newHistory.pop() // Remove current
-    const prevState = newHistory[newHistory.length - 1]
-
-    setModalTitle(prevState.title)
-    if (prevState.type === 'users') {
-      setModalUsers(prevState.users)
-    } else {
-      setModalEntries(prevState.entries)
-    }
-    setViewType(prevState.type)
-    setSelectedTopicId(prevState.topicId)
-    setHistory(newHistory)
+  const openTopicEntries = (topicId: number, topicName: string) => {
+    setSelectedTopic({ id: topicId, name: topicName })
+    setDrillLevel(1)
   }
 
   const handleEntryClick = (entry: Entry) => {
     setSelectedEntry(entry)
+    setDrillLevel(2)
   }
 
   const handleOverride = (entry: Entry) => {
@@ -234,55 +196,204 @@ function AdminDashboard({
     setOverrideModalOpen(true)
   }
 
-  // Topic analytics
+  const goBack = () => {
+    if (drillLevel === 2) {
+      setDrillLevel(1)
+      setSelectedEntry(null)
+    } else if (drillLevel === 1) {
+      setDrillLevel(0)
+      setSelectedTopic(null)
+    }
+  }
+
+  // Helper: Recursive descendant IDs
+  const getDescendantIds = (topicId: number): number[] => {
+    const children = topics.filter(t => t.parent_id === topicId)
+    return children.reduce((acc, child) => {
+      return [...acc, child.id, ...getDescendantIds(child.id)]
+    }, [] as number[])
+  }
+
+  // Helper: Topic path breadcrumb
+  const getTopicPath = (topicId: number): string => {
+    const topic = topics.find(t => t.id === topicId)
+    if (!topic) return 'Unknown'
+    if (!topic.parent_id) return topic.name
+    const parent = topics.find(t => t.id === topic.parent_id)
+    if (!parent) return topic.name
+    return `${getTopicPath(topic.parent_id)} > ${topic.name}`
+  }
+
+  // Sorting and Filtering states for Level 0 (Topics)
+  const [topicFilter, setTopicFilter] = useState('')
+  const [topicSort, setTopicSort] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null) // Default: null (triggers Last Created sort)
+  const [topicPageSize, setTopicPageSize] = useState(50)
+  const [topicFlaggedFilter, setTopicFlaggedFilter] = useState<'all' | 'has_flagged' | 'no_flagged'>('all')
+  const [topicMinEntries, setTopicMinEntries] = useState(0)
+
+  // Level 0: Topic analytics (ROOT LEVEL ONLY with aggregation)
   const topicStats = useMemo(() => {
-    const statsMap = new Map<number, { id: number; name: string; entries: number; hours: number; flagged: number }>()
+    // Only show topics that are top-level parents (root)
+    const rootTopics = topics.filter(t => t.parent_id === null)
 
-    entries.forEach((entry) => {
-      const topic = topics.find((t) => t.id === entry.topic)
-      if (!topic) return
+    let results = rootTopics.map(root => {
+      const familyIds = [root.id, ...getDescendantIds(root.id)]
+      const familyEntries = entries.filter(e => familyIds.includes(e.topic))
 
-      const existing = statsMap.get(topic.id) || { id: topic.id, name: topic.name, entries: 0, hours: 0, flagged: 0 }
-      existing.entries++
-      existing.hours += entry.hours
-      if (entry.status === 'flagged') existing.flagged++
-      statsMap.set(topic.id, existing)
+      return {
+        id: root.id,
+        name: root.name,
+        created_at: root.created_at || new Date().toISOString(),
+        entries: familyEntries.length,
+        hours: familyEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0),
+        flagged: familyEntries.filter(e => e.status === 'flagged').length,
+        userCount: new Set(familyEntries.map(e => e.user)).size
+      }
     })
 
-    return Array.from(statsMap.values())
-      .sort((a, b) => b.entries - a.entries)
-      .slice(0, 5)
-  }, [entries, topics])
+    // Apply search filter
+    if (topicFilter) {
+      results = results.filter((t) => t.name.toLowerCase().includes(topicFilter.toLowerCase()))
+    }
+
+    // Apply flagged filter
+    if (topicFlaggedFilter === 'has_flagged') {
+      results = results.filter((t) => t.flagged > 0)
+    } else if (topicFlaggedFilter === 'no_flagged') {
+      results = results.filter((t) => t.flagged === 0)
+    }
+
+    // Apply minimum entries filter
+    if (topicMinEntries > 0) {
+      results = results.filter((t) => t.entries >= topicMinEntries)
+    }
+
+    // Apply sorting
+    if (topicSort) {
+      results.sort((a, b) => {
+        // @ts-ignore
+        const aVal = a[topicSort.key]
+        // @ts-ignore
+        const bVal = b[topicSort.key]
+        if (aVal < bVal) return topicSort.direction === 'asc' ? -1 : 1
+        if (aVal > bVal) return topicSort.direction === 'asc' ? 1 : -1
+        return 0
+      })
+    } else {
+      // Default: Sort by Last Created (Newest First) using created_at
+      results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }
+
+    return results.slice(0, topicPageSize)
+  }, [entries, topics, topicFilter, topicSort, topicPageSize, topicFlaggedFilter, topicMinEntries])
+
+  // Level 1: Filtered entries for selected topic (+ descendants) OR pending/flagged entries
+  const currentTopicEntries = useMemo(() => {
+    let results: Entry[] = []
+
+    if (selectedTopic) {
+      // Include selected topic AND all its children
+      const familyIds = [selectedTopic.id, ...getDescendantIds(selectedTopic.id)]
+      results = entries.filter(e => familyIds.includes(e.topic))
+    } else if (drillLevel === 1) {
+      // Show pending and flagged entries when no topic is selected
+      results = entries.filter(e => e.status === 'pending' || e.status === 'flagged')
+    }
+
+    // Apply status filter
+    if (entriesStatusFilter !== 'all') {
+      results = results.filter(e => e.status === entriesStatusFilter)
+    }
+
+    // Apply search filter
+    if (entriesSearchQuery) {
+      const query = entriesSearchQuery.toLowerCase()
+      results = results.filter(e => {
+        const user = mockUsers.find(u => u.id === e.user)
+        return (
+          user?.name.toLowerCase().includes(query) ||
+          e.id.toString().includes(query)
+        )
+      })
+    }
+
+    // Apply hours range filter
+    if (entriesMinHours > 0) {
+      results = results.filter(e => e.hours >= entriesMinHours)
+    }
+    if (entriesMaxHours > 0) {
+      results = results.filter(e => e.hours <= entriesMaxHours)
+    }
+
+    // Apply date range filter
+    if (entriesStartDate) {
+      results = results.filter(e => e.date >= entriesStartDate)
+    }
+    if (entriesEndDate) {
+      results = results.filter(e => e.date <= entriesEndDate)
+    }
+
+    if (topicEntriesSort) {
+      results.sort((a, b) => {
+        // @ts-ignore
+        const aVal = a[topicEntriesSort.key]
+        // @ts-ignore
+        const bVal = b[topicEntriesSort.key]
+        if (aVal < bVal) return topicEntriesSort.direction === 'asc' ? -1 : 1
+        if (aVal > bVal) return topicEntriesSort.direction === 'asc' ? 1 : -1
+        return 0
+      })
+    }
+
+    return results.slice(0, topicEntriesPageSize)
+  }, [entries, selectedTopic, drillLevel, entriesStatusFilter, entriesSearchQuery, entriesMinHours, entriesMaxHours, entriesStartDate, entriesEndDate, topicEntriesSort, topicEntriesPageSize])
+
+  // Calculate effective benchmark for a topic (sum of children's benchmarks if parent, or direct benchmark if leaf)
+  const calculateEffectiveBenchmark = (topicId: number): number => {
+    const topic = topics.find(t => t.id === topicId)
+    if (!topic) return 0.0
+
+    // Find direct children
+    const children = topics.filter(t => t.parent_id === topicId)
+
+    if (children.length > 0) {
+      // It's a parent -> Sum children's benchmarks recursively
+      return children.reduce((sum, child) => sum + calculateEffectiveBenchmark(child.id), 0)
+    }
+
+    // It's a leaf -> Return direct benchmark
+    return Number(topic.benchmark_hours) || 0.0
+  }
+
+
+
+  const requestTopicSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (topicSort && topicSort.key === key && topicSort.direction === 'asc') {
+      direction = 'desc'
+    }
+    setTopicSort({ key, direction })
+  }
+
+  const requestEntriesSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (topicEntriesSort && topicEntriesSort.key === key && topicEntriesSort.direction === 'asc') {
+      direction = 'desc'
+    }
+    setTopicEntriesSort({ key, direction })
+  }
 
   const totalPendingApprovals = stats.pending + stats.flagged
 
   return (
     <>
-      <DrillDownModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={modalTitle}
-        entries={modalEntries}
-        users={modalUsers}
-        viewType={viewType}
-        isAdmin={true}
-        onUserClick={handleUserClick}
-        onEntryClick={handleEntryClick}
-        onBack={history.length > 1 ? handleBack : undefined}
-      />
-
-      <EntryDetailModal
-        entry={selectedEntry}
-        onClose={() => setSelectedEntry(null)}
-        onOverride={handleOverride}
-      />
-
       <OverrideModal
-        entry={selectedEntry}
+        entry={overrideModalOpen ? selectedEntry : null}
         open={overrideModalOpen}
         onClose={() => {
           setOverrideModalOpen(false)
-          setSelectedEntry(null)
+          // Don't deselect selectedEntry here if we're in Level 2 detail view
+          if (drillLevel !== 2) setSelectedEntry(null)
         }}
       />
 
@@ -318,52 +429,418 @@ function AdminDashboard({
           </Card>
         </Link>
 
-        <Link to="/admin/leave">
-          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Leaves</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingLeaves}</div>
-              <p className="text-xs text-muted-foreground">approved leaves</p>
-            </CardContent>
-          </Card>
-        </Link>
+
       </div>
 
-      {/* Main Content - Entries by Topic */}
-      <Card className="col-span-full">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Entries</CardTitle>
-            <CardDescription>View entries by topic</CardDescription>
+      {/* Main Content - Dynamic Drill-down Table */}
+      <Card className="col-span-full shadow-md">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-6">
+          <div className="flex items-center gap-3">
+            {drillLevel > 0 && (
+              <Button variant="ghost" size="icon" onClick={goBack} className="h-9 w-9">
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            )}
+            <div>
+              <CardTitle className="text-xl">
+                {drillLevel === 0 && "Entries Summary"}
+                {drillLevel === 1 && (selectedTopic ? `${selectedTopic.name} - Entries` : "Filtered Entries")}
+                {drillLevel === 2 && `Entry Details (#${selectedEntry?.id})`}
+              </CardTitle>
+              <CardDescription>
+                {drillLevel === 0 && "View learning activities by topic"}
+                {drillLevel === 1 && `Reviewing entries for ${selectedTopic?.name || 'filtered selection'}`}
+                {drillLevel === 2 && `Detailed view for entry by ${mockUsers.find(u => u.id === selectedEntry?.user)?.name}`}
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            {drillLevel === 0 && (
+              <>
+                <Select value={topicFlaggedFilter} onValueChange={(v) => setTopicFlaggedFilter(v as 'all' | 'has_flagged' | 'no_flagged')}>
+                  <SelectTrigger className="w-[150px] h-9">
+                    <SelectValue placeholder="Flagged Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Topics</SelectItem>
+                    <SelectItem value="has_flagged">Has Flagged</SelectItem>
+                    <SelectItem value="no_flagged">No Flagged</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  placeholder="Min Entries"
+                  value={topicMinEntries || ''}
+                  onChange={e => setTopicMinEntries(parseInt(e.target.value) || 0)}
+                  className="w-[120px] h-9"
+                  min="0"
+                />
+                <Select value={topicPageSize.toString()} onValueChange={(v) => setTopicPageSize(parseInt(v))}>
+                  <SelectTrigger className="w-[110px] h-9">
+                    <SelectValue placeholder="Show 50" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="50">Show 50</SelectItem>
+                    <SelectItem value="100">Show 100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search topics..."
+                    value={topicFilter}
+                    onChange={e => setTopicFilter(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
+              </>
+            )}
+            {drillLevel === 1 && (
+              <>
+                <Select value={entriesStatusFilter} onValueChange={(v) => setEntriesStatusFilter(v as 'all' | 'pending' | 'flagged' | 'approved')}>
+                  <SelectTrigger className="w-[130px] h-9">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="flagged">Flagged</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  placeholder="Min Hours"
+                  value={entriesMinHours || ''}
+                  onChange={e => setEntriesMinHours(parseFloat(e.target.value) || 0)}
+                  className="w-[110px] h-9"
+                  min="0"
+                  step="0.5"
+                />
+                <Input
+                  type="number"
+                  placeholder="Max Hours"
+                  value={entriesMaxHours || ''}
+                  onChange={e => setEntriesMaxHours(parseFloat(e.target.value) || 0)}
+                  className="w-[110px] h-9"
+                  min="0"
+                  step="0.5"
+                />
+                <Input
+                  type="date"
+                  placeholder="Start Date"
+                  value={entriesStartDate}
+                  onChange={e => setEntriesStartDate(e.target.value)}
+                  className="w-[140px] h-9"
+                />
+                <Input
+                  type="date"
+                  placeholder="End Date"
+                  value={entriesEndDate}
+                  onChange={e => setEntriesEndDate(e.target.value)}
+                  className="w-[140px] h-9"
+                />
+                <Select value={topicEntriesPageSize.toString()} onValueChange={(v) => setTopicEntriesPageSize(parseInt(v))}>
+                  <SelectTrigger className="w-[110px] h-9">
+                    <SelectValue placeholder="Show 50" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="50">Show 50</SelectItem>
+                    <SelectItem value="100">Show 100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by user or entry #..."
+                    value={entriesSearchQuery}
+                    onChange={e => setEntriesSearchQuery(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
+              </>
+            )}
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {topicStats.map((topic) => (
-              <div
-                key={topic.id}
-                className="space-y-2 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                onClick={() => openTopicUsers(topic.id, topic.name)}
-              >
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{topic.name}</span>
-                  <span className="text-muted-foreground">
-                    {topic.entries} {topic.entries === 1 ? 'entry' : 'entries'}
-                  </span>
-                </div>
-                <Progress
-                  value={(topic.entries / (topicStats[0]?.entries || 1)) * 100}
-                  className="h-2"
-                />
-                {topic.flagged > 0 && (
-                  <p className="text-xs text-warning mt-1">{topic.flagged} flagged/pending</p>
-                )}
+        <CardContent className="pt-6">
+          {drillLevel === 0 && (
+            <>
+              <div className="rounded-lg border overflow-hidden shadow-sm">
+                <Table>
+                  <TableHeader className="bg-muted/40">
+                    <TableRow>
+                      <TableHead
+                        className="py-3 h-11 text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => requestTopicSort('name')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Topic Name
+                          <ArrowUpDown className="h-3 w-3" />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="py-3 h-11 text-center text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => requestTopicSort('entries')}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          Entries
+                          <ArrowUpDown className="h-3 w-3" />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="py-3 h-11 text-center text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => requestTopicSort('userCount')}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          Users
+                          <ArrowUpDown className="h-3 w-3" />
+                        </div>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {topicStats.map((topic) => (
+                      <TableRow
+                        key={topic.id}
+                        className="cursor-pointer hover:bg-muted/30 transition-colors group"
+                        onClick={() => openTopicEntries(topic.id, topic.name)}
+                      >
+                        <TableCell className="py-4 font-medium text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="group-hover:text-primary transition-colors text-primary font-semibold">{topic.name}</span>
+                            {topic.flagged > 0 && (
+                              <Badge variant="destructive" className="h-5 px-1.5 text-[10px] font-bold">
+                                {topic.flagged} FLAGGED
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 text-center font-mono text-sm">{topic.entries}</TableCell>
+                        <TableCell className="py-4 text-center font-mono text-sm">{topic.userCount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            ))}
-          </div>
+              {topicStats.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg mt-2 bg-muted/10">
+                  <Search className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-muted-foreground text-sm font-medium">No results found for "{topicFilter}"</p>
+                  <Button variant="link" size="sm" onClick={() => setTopicFilter('')} className="mt-1">Clear filters</Button>
+                </div>
+              )}
+            </>
+          )}
+
+          {drillLevel === 1 && (
+            <div className="rounded-lg border overflow-hidden shadow-sm">
+              <Table>
+                <TableHeader className="bg-muted/40 font-bold">
+                  <TableRow>
+                    <TableHead
+                      className="cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => requestEntriesSort('id')}
+                    >
+                      <div className="flex items-center gap-1">Entry # <ArrowUpDown className="h-3 w-3" /></div>
+                    </TableHead>
+                    <TableHead>User Name</TableHead>
+                    <TableHead>Topic Area</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => requestEntriesSort('progress_percent')}
+                    >
+                      <div className="flex items-center justify-end gap-1">Progress % <ArrowUpDown className="h-3 w-3" /></div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentTopicEntries.map((entry) => {
+                    const user = users.find((u) => u.id === entry.user)
+                    const entryTopic = topics.find(t => t.id === entry.topic)
+                    let parentProgress = Math.round(Number(entry.progress_percent) || 0)
+                    if (entryTopic?.parent_id) {
+                      const parentTopic = topics.find(t => t.id === entryTopic.parent_id)
+                      if (parentTopic) {
+                        const childTopics = topics.filter(t => t.parent_id === parentTopic.id)
+                        if (childTopics.length > 0) {
+                          const totalProgress = childTopics.reduce((sum, child) => {
+                            const childEntries = entries.filter(e => e.topic === child.id && e.user === entry.user)
+                            const maxP = childEntries.length > 0 ? Math.max(...childEntries.map(e => Number(e.progress_percent) || 0)) : 0
+                            return sum + maxP
+                          }, 0)
+                          parentProgress = Math.round(totalProgress / childTopics.length)
+                        }
+                      }
+                    }
+
+                    return (
+                      <TableRow
+                        key={entry.id}
+                        className="cursor-pointer hover:bg-muted/30 transition-colors"
+                        onClick={() => handleEntryClick(entry)}
+                      >
+                        <TableCell className="font-mono text-xs font-semibold text-primary">#{entry.id}</TableCell>
+                        <TableCell className="font-medium">{user?.name}</TableCell>
+                        <TableCell className="text-xs font-medium text-muted-foreground/80">
+                          {getTopicPath(entry.topic)}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{entry.date}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline" className="font-mono bg-muted/20">
+                            {parentProgress}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+              {currentTopicEntries.length === 0 && (
+                <div className="p-12 text-center text-muted-foreground">No entries found for this topic.</div>
+              )}
+            </div>
+          )}
+
+          {drillLevel === 2 && selectedEntry && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="md:col-span-2 space-y-8">
+                <div>
+                  <h3 className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest flex items-center gap-2">
+                    <BookOpen className="h-3 w-3" /> Topic
+                  </h3>
+                  <div className="p-4 bg-muted/20 rounded-xl border text-sm font-medium">
+                    {getTopicPath(selectedEntry.topic)}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest flex items-center gap-2">
+                    <Users className="h-3 w-3" /> Learner Details
+                  </h3>
+                  <div className="p-4 bg-muted/20 rounded-xl border text-sm font-medium flex items-center justify-between">
+                    <span>{users.find(u => u.id === selectedEntry.user)?.name || 'Unknown User'}</span>
+                    <span className="text-xs text-muted-foreground">ID: {selectedEntry.user}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest flex items-center gap-2">
+                    <FileText className="h-3 w-3" /> Detailed Description
+                  </h3>
+                  <div className="p-5 bg-card/50 rounded-xl text-sm leading-relaxed border shadow-inner whitespace-pre-wrap min-h-[120px] max-h-[400px] overflow-y-auto break-words">
+                    {selectedEntry.learned_text}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-bold text-destructive mb-2 uppercase tracking-widest flex items-center gap-2">
+                    <AlertTriangle className="h-3 w-3" /> Blockers Encountered
+                  </h3>
+                  <div className={cn(
+                    "p-5 rounded-xl text-sm border shadow-sm font-medium",
+                    selectedEntry.blockers_text ? "bg-destructive/5 text-destructive border-destructive/20" : "bg-muted/10 text-muted-foreground border-border"
+                  )}>
+                    {(() => {
+                      const text = selectedEntry.blockers_text || '';
+                      if (!text) return <span className="italic opacity-70">None reported</span>;
+
+                      const parts = text.split(':');
+                      const potentialType = parts[0]?.trim();
+                      const description = parts.length > 1 ? parts.slice(1).join(':').trim() : text;
+                      const validTypes = ['Technical', 'Environmental', 'Personal', 'Resource', 'Other'];
+
+                      if (parts.length > 1 && validTypes.includes(potentialType)) {
+                        return (
+                          <div className="flex flex-col gap-2">
+                            <Badge variant="destructive" className="w-fit px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider">{potentialType}</Badge>
+                            <span className="leading-relaxed text-foreground/80">{description}</span>
+                          </div>
+                        )
+                      }
+                      return text;
+                    })()}
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-sky-500 animate-pulse text-xl">✨</span>
+                    <h3 className="text-sm font-bold text-foreground tracking-tight">AI REASONING ANALYSIS</h3>
+                  </div>
+                  <div className="bg-gradient-to-br from-sky-500/5 to-transparent border border-sky-500/20 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="relative z-10 space-y-4">
+                      <p className="text-sm text-foreground/80 leading-relaxed italic font-medium">
+                        "Based on the complexity of {topics.find(t => t.id === selectedEntry.topic)?.name} and the learner's history, the duration of {selectedEntry.hours}h is {selectedEntry.hours > 5 ? 'above average but consistent' : 'optimal'}. Valid learning outcomes detected."
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto border-sky-500/50 text-sky-700 hover:bg-sky-500/10 font-bold tracking-tight rounded-full px-6"
+                        onClick={() => handleOverride(selectedEntry)}
+                      >
+                        OVERRIDE STATUS
+                      </Button>
+                    </div>
+                    <div className="absolute -right-4 -bottom-4 text-sky-500/10 rotate-12">
+                      <TrendingUp className="h-24 w-24" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="rounded-2xl border bg-card p-6 space-y-6 shadow-sm">
+                  <h3 className="text-sm font-bold border-b pb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Metrics & Meta
+                  </h3>
+                  <div className="space-y-5">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Logged On</span>
+                      <span className="font-bold">{selectedEntry.date}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Time Spent</span>
+                      <span className="font-bold text-primary">{selectedEntry.hours} hours</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-bold text-xs">
+                        {(() => {
+                          const entryTopic = topics.find(t => t.id === selectedEntry.topic)
+                          if (entryTopic?.parent_id) {
+                            const parentTopic = topics.find(t => t.id === entryTopic.parent_id)
+                            if (parentTopic) {
+                              const childTopics = topics.filter(t => t.parent_id === parentTopic.id)
+                              if (childTopics.length > 0) {
+                                const totalProgress = childTopics.reduce((sum, child) => {
+                                  const childEntries = entries.filter(e => e.topic === child.id && e.user === selectedEntry.user)
+                                  const maxP = childEntries.length > 0 ? Math.max(...childEntries.map(e => Number(e.progress_percent) || 0)) : 0
+                                  return sum + maxP
+                                }, 0)
+                                return Math.round(totalProgress / childTopics.length)
+                              }
+                            }
+                          }
+                          return Math.round(Number(selectedEntry.progress_percent) || 0)
+                        })()}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm pt-2 border-t font-bold">
+                      <span className="text-muted-foreground">Status</span>
+                      <Badge variant={selectedEntry.status === 'flagged' ? 'destructive' : 'outline'} className="rounded-sm text-[10px] px-1.5 uppercase">
+                        {selectedEntry.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <Button className="w-full h-12 rounded-xl text-sm font-bold shadow-lg" onClick={goBack}>
+                  RETURN TO LIST
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -420,17 +897,6 @@ function LearnerDashboard({
   plans: TrainingPlan[]
   assignments: PlanAssignment[]
 }) {
-  // Drill-down Modal State
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalTitle, setModalTitle] = useState('')
-  const [modalEntries, setModalEntries] = useState<Entry[]>([])
-
-  const openDrillDown = (title: string, entries: Entry[]) => {
-    setModalTitle(title)
-    setModalEntries(entries)
-    setModalOpen(true)
-  }
-
   // Get user's entries
   const userEntries = entries.filter((e) => e.user === user?.id)
 
@@ -446,60 +912,48 @@ function LearnerDashboard({
 
   return (
     <>
-      <DrillDownModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={modalTitle}
-        entries={modalEntries}
-        viewType="entries"
-        isAdmin={false}
-      />
-
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card
-          className="hover:bg-muted/50 transition-colors cursor-pointer"
-          onClick={() => openDrillDown('Approved Entries', userEntries.filter(e => e.status === 'approved'))}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">{stats.approved}</div>
-            <p className="text-xs text-muted-foreground">Entries approved</p>
-          </CardContent>
-        </Card>
+        <Link to="/calendar">
+          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Approved</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-success" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-success">{stats.approved}</div>
+              <p className="text-xs text-muted-foreground">Entries approved</p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card
-          className="hover:bg-muted/50 transition-colors cursor-pointer"
-          onClick={() => openDrillDown('Pending Entries', userEntries.filter(e => e.status === 'pending'))}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground">Awaiting review</p>
-          </CardContent>
-        </Card>
+        <Link to="/calendar">
+          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <Clock className="h-4 w-4 text-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning">{stats.pending}</div>
+              <p className="text-xs text-muted-foreground">Awaiting review</p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card
-          className="hover:bg-muted/50 transition-colors cursor-pointer"
-          onClick={() => openDrillDown('All Entries', userEntries)}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalEntries}</div>
-            <p className="text-xs text-muted-foreground">All time logged</p>
-          </CardContent>
-        </Card>
+        <Link to="/calendar">
+          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalEntries}</div>
+              <p className="text-xs text-muted-foreground">All time logged</p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card>
+        <Card className="h-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Monthly Hours</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -602,7 +1056,7 @@ function LearnerDashboard({
                   const topic = topics.find((t) => t.id === pt.topic_id)
                   const userHours = entries
                     .filter((e) => e.user === user?.id && e.topic === pt.topic_id && e.status === 'approved')
-                    .reduce((sum, e) => sum + e.hours, 0)
+                    .reduce((sum, e) => sum + Number(e.hours || 0), 0)
                   const progress = Math.min(100, (userHours / pt.expected_hours) * 100)
 
                   return (

@@ -57,7 +57,22 @@ class Topic(models.Model):
                 child.save()
 
     def soft_delete(self):
-        """Soft delete this topic"""
+        """
+        [Reload Triggered]
+        Soft delete this topic and all its descendants recursively.
+        Also removes this topic from any Training Plans to prevent 'ghost' hours.
+        """
+        # 1. Recursive soft delete for children
+        children = self.children.filter(is_active=True)
+        for child in children:
+            child.soft_delete()
+
+        # 2. Remove from Training Plans (Hard delete the association, as the topic is effectively gone)
+        # We import here to avoid circular imports if any
+        from apps.training_plans.models import PlanTopic
+        PlanTopic.objects.filter(topic=self).delete()
+
+        # 3. Soft delete self
         self.is_active = False
         self.save()
 
@@ -171,6 +186,9 @@ class LearnerTopicMastery(models.Model):
                     user=self.user,
                     topic=child
                 )
+                # Force a refresh of the child's organic state before calculating parent average
+                # This breaks the "Lock Trap" where children stay at 100% because they were forced previously.
+                child_m.recalculate_mastery(trigger_propagation=False)
                 total_calc_progress += child_m.current_progress
 
             # Check for direct completion on the parent
@@ -211,21 +229,29 @@ class LearnerTopicMastery(models.Model):
     def propagate_down(self):
         """
         Parent mastered -> All descendants mastered.
+        Parent unlocked -> Trigger recalculation for all descendants to revert to organic state.
         """
-        if not self.is_locked:
-            return
-
         children = Topic.objects.filter(parent=self.topic, is_active=True)
         for child in children:
             child_mastery, _ = LearnerTopicMastery.objects.get_or_create(
                 user=self.user,
                 topic=child
             )
-            if not child_mastery.is_locked:
-                child_mastery.current_progress = 100
-                child_mastery.is_locked = True
-                child_mastery.save()
-                child_mastery.propagate_down()
+            
+            if self.is_locked:
+                # Parent is locked -> Force child to 100%
+                if not child_mastery.is_locked:
+                    child_mastery.current_progress = 100
+                    child_mastery.is_locked = True
+                    child_mastery.save()
+                    child_mastery.propagate_down()
+            else:
+                # Parent is UNLOCKED -> Child must check its own "organic" state
+                # If it was only 100% because of this parent, it will now drop/unlock.
+                if child_mastery.is_locked:
+                    # trigger_propagation=False to prevent circular upward calls
+                    child_mastery.recalculate_mastery(trigger_propagation=False)
+                    child_mastery.propagate_down()
 
     def propagate_up(self):
         """

@@ -107,6 +107,9 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+    def perform_update(self, serializer):
+        serializer.save()
+
 
 class UserListCreateView(generics.ListCreateAPIView):
     """
@@ -130,6 +133,9 @@ class UserListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(role=role)
         return queryset.order_by('-created_at')
 
+    def perform_create(self, serializer):
+        serializer.save()
+
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -140,6 +146,9 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
     
+    def perform_update(self, serializer):
+        serializer.save()
+
     def perform_destroy(self, instance):
         """Soft delete user instead of hard delete"""
         instance.soft_delete()

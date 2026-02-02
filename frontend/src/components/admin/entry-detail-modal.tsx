@@ -1,21 +1,18 @@
 'use client'
 
-import React from "react"
 import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { AlertTriangle, Bot } from 'lucide-react'
-import { mockUsers, mockTopics } from '@/lib/mock-data'
+
 import { cn } from '@/lib/utils'
-import { Entry } from '@/lib/types'
+import { Entry, User, Topic } from '@/lib/types'
+import { useAppSelector } from '@/lib/store/hooks'
 
 interface EntryDetailModalProps {
     entry: Entry | null
@@ -28,122 +25,140 @@ export function EntryDetailModal({
     onClose,
     onOverride
 }: EntryDetailModalProps) {
+    const { users } = useAppSelector((state) => state.users)
+    const { topics } = useAppSelector((state) => state.topics)
+    const { entries } = useAppSelector((state) => state.entries)
+
     if (!entry) return null
 
-    const entryUser = mockUsers.find((u) => u.id === entry.user_id)
-    const topic = mockTopics.find((t) => t.id === entry.topic_id)
+    const entryUser = users.find((u: User) => u.id === entry.user)
+    const topic = topics.find((t: Topic) => t.id === entry.topic)
 
     return (
         <Dialog open={!!entry} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
                 <DialogHeader>
-                    <DialogTitle>Entry Details</DialogTitle>
-                    <DialogDescription>
-                        {entryUser?.name} - {entry.date}
-                    </DialogDescription>
+                    <div className="flex justify-between items-start pr-8">
+                        <div>
+                            <DialogTitle className="text-xl">ENTRY (#{entry.id})</DialogTitle>
+                            <DialogDescription className="text-sm">
+                                Topic: {topic?.name}
+                            </DialogDescription>
+                        </div>
+                        <Badge variant={entry.status === 'flagged' ? 'destructive' : 'outline'} className="text-sm px-3 py-1">
+                            {entry.status.toUpperCase()}
+                        </Badge>
+                    </div>
                 </DialogHeader>
 
-                <div className="space-y-6">
-                    {/* Entry Info */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                    <div className="md:col-span-2 space-y-6">
                         <div>
-                            <Label className="text-muted-foreground">Topic</Label>
-                            <p className="font-medium">{topic?.name}</p>
+                            <h3 className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Learner Details</h3>
+                            <div className="p-3 bg-muted/20 rounded border text-sm">
+                                {entryUser?.name} (ID: {entryUser?.id})
+                            </div>
                         </div>
-                        <div>
-                            <Label className="text-muted-foreground">Hours</Label>
-                            <p className="font-medium">{entry.hours}h (Benchmark: ~{topic?.benchmark_hours}h)</p>
-                        </div>
-                        <div>
-                            <Label className="text-muted-foreground">Learner Profile</Label>
-                            <p className="font-medium">
-                                {entryUser?.experience_years} yrs exp
-                            </p>
-                        </div>
-                        <div>
-                            <Label className="text-muted-foreground">Status</Label>
-                            <Badge
-                                variant={
-                                    entry.status === 'approved'
-                                        ? 'default'
-                                        : entry.status === 'flagged' || entry.status === 'rejected'
-                                            ? 'destructive'
-                                            : 'secondary'
-                                }
-                                className={cn(entry.status === 'approved' && 'bg-success hover:bg-success/80')}
-                            >
-                                {entry.status}
-                            </Badge>
-                        </div>
-                    </div>
 
-                    {/* Learning Description */}
-                    <div>
-                        <Label className="text-muted-foreground">What was learned</Label>
-                        <p className="mt-1 rounded-md border border-border bg-muted/30 p-3 text-sm">
-                            {entry.learned_text}
-                        </p>
-                    </div>
+                        <div>
+                            <h3 className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Detailed Description</h3>
+                            <div className="p-4 bg-muted/30 rounded-lg text-sm leading-relaxed border whitespace-pre-wrap break-words overflow-wrap-break-word max-w-full">
+                                {entry.learned_text}
+                            </div>
+                        </div>
 
-                    {/* AI Analysis */}
-                    {entry.ai_status === 'analyzed' && (
-                        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Bot className="h-5 w-5 text-primary" />
-                                <span className="font-medium">AI Analysis (Admin Only)</span>
-                                <Badge
-                                    variant={
-                                        entry.ai_decision === 'approve'
-                                            ? 'default'
-                                            : entry.ai_decision === 'flag'
-                                                ? 'secondary'
-                                                : 'destructive'
+                        <div>
+                            <h3 className="text-xs font-bold text-destructive mb-1 uppercase tracking-wider">Blockers Encountered</h3>
+                            <div className={cn(
+                                "p-4 rounded-lg text-sm border",
+                                entry.blockers_text ? "bg-destructive/5 text-destructive border-destructive/20" : "bg-muted/10 text-muted-foreground border-border"
+                            )}>
+                                {(() => {
+                                    const text = entry.blockers_text || '';
+                                    if (!text) return <span className="italic opacity-70">None reported</span>;
+
+                                    const parts = text.split(':');
+                                    const potentialType = parts[0]?.trim();
+                                    const description = parts.length > 1 ? parts.slice(1).join(':').trim() : text;
+                                    const validTypes = ['Technical', 'Environmental', 'Personal', 'Resource', 'Other'];
+
+                                    if (parts.length > 1 && validTypes.includes(potentialType)) {
+                                        return (
+                                            <div className="flex flex-col gap-2">
+                                                <Badge variant="destructive" className="w-fit px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider">{potentialType}</Badge>
+                                                <span className="leading-relaxed text-foreground/80">{description}</span>
+                                            </div>
+                                        )
                                     }
-                                    className={cn(entry.ai_decision === 'approve' && 'bg-success hover:bg-success/80')}
-                                >
-                                    {entry.ai_decision?.toUpperCase()}
-                                </Badge>
-                                <span className="text-sm text-muted-foreground ml-auto">
-                                    Confidence: {entry.ai_confidence}%
-                                </span>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-muted-foreground">Chain of Thought Reasoning</Label>
-                                <p className="text-sm">{entry.ai_reasoning}</p>
+                                    return text;
+                                })()}
                             </div>
                         </div>
-                    )}
 
-                    {/* Override Info */}
-                    {entry.admin_override && (
-                        <div className="rounded-lg border border-border bg-warning/10 p-4 space-y-2">
-                            <div className="flex items-center gap-2">
-                                <AlertTriangle className="h-5 w-5 text-warning" />
-                                <span className="font-medium">Admin Override</span>
+                        {/* AI Reasoning Section */}
+                        <div className="pt-4 border-t">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-sky-500">✨</span>
+                                <h3 className="text-sm font-bold text-foreground">AI REASONING (MOCK)</h3>
                             </div>
-                            <p className="text-sm">
-                                <strong>Reason:</strong> {entry.override_reason}
-                            </p>
-                            {entry.override_comment && (
-                                <p className="text-sm">
-                                    <strong>Comment:</strong> {entry.override_comment}
+
+                            <div className="bg-sky-500/5 border border-sky-500/20 rounded-lg p-4 space-y-3">
+                                <p className="text-sm text-muted-foreground italic">
+                                    "Based on the complexity of {topic?.name} and the learner's previous history, the duration of {entry.hours}h is {entry.hours > 5 ? 'slightly above average but consistent' : 'optimal'}. Valid learning outcomes detected."
                                 </p>
-                            )}
+                                <div className="pt-2">
+                                    <Button variant="outline" size="sm" className="w-full border-sky-200 text-sky-700 hover:bg-sky-100" onClick={() => onOverride && onOverride(entry)}>
+                                        Override Status
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                    )}
-                </div>
+                    </div>
 
-                <DialogFooter className="flex gap-2">
-                    <Button variant="outline" onClick={onClose}>
-                        Close
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        onClick={() => onOverride && onOverride(entry)}
-                    >
-                        Override AI
-                    </Button>
-                </DialogFooter>
+                    <div className="space-y-6">
+                        <div className="rounded-lg border bg-card p-4 space-y-4">
+                            <h3 className="text-sm font-bold border-b pb-2">Time & Progress</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Date</span>
+                                    <span className="font-medium">{entry.date}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Time Spent</span>
+                                    <span className="font-medium">{entry.hours} hours</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Progress</span>
+                                    <span className="font-medium">
+                                        {(() => {
+                                            if (topic?.parent_id) {
+                                                const parentTopic = topics.find(t => t.id === topic.parent_id)
+                                                if (parentTopic) {
+                                                    const childTopics = topics.filter(t => t.parent_id === parentTopic.id)
+                                                    if (childTopics.length > 0) {
+                                                        const totalProgress = childTopics.reduce((sum, child) => {
+                                                            const childEntries = entries.filter(e => e.topic === child.id && e.user === entry.user)
+                                                            const maxP = childEntries.length > 0 ? Math.max(...childEntries.map(e => Number(e.progress_percent) || 0)) : 0
+                                                            return sum + maxP
+                                                        }, 0)
+                                                        return Math.round(totalProgress / childTopics.length)
+                                                    }
+                                                }
+                                            }
+                                            return Math.round(Number(entry.progress_percent) || 0)
+                                        })()}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Button className="w-full" variant="outline" onClick={onClose}>
+                                Close View
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     )

@@ -9,7 +9,6 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Topic
 from .serializers import TopicSerializer, TopicCreateUpdateSerializer
 from apps.users.permissions import IsAdmin
-
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +38,7 @@ class TopicListCreateView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         topic = serializer.save()
+        
         logger.info(f"Topic created: {topic.name} (ID: {topic.id})")
         return Response(
             TopicSerializer(topic, context=self.get_serializer_context()).data,
@@ -72,6 +72,7 @@ class TopicDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         topic = serializer.save()
+        
         logger.info(f"Topic updated: {topic.name} (ID: {topic.id})")
         return Response(TopicSerializer(topic, context=self.get_serializer_context()).data)
     
@@ -79,6 +80,7 @@ class TopicDetailView(generics.RetrieveUpdateDestroyAPIView):
         """Soft delete - set is_active to False"""
         instance = self.get_object()
         instance.soft_delete()
+        
         logger.info(f"Topic soft deleted: {instance.name} (ID: {instance.id})")
         return Response(
             {'message': 'Topic deleted successfully'},

@@ -7,6 +7,7 @@ class Entry(models.Model):
     """
     Daily learning activity records.
     Strictly follows EER Schema v2.1 validation rules.
+    (Reload Triggered)
     """
     STATUS_CHOICES = [
         ('pending', 'Pending'),

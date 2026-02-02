@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import type { Topic } from '@/lib/types'
 import api from '@/lib/api'
+import { fetchTrainingPlans } from './trainingPlansSlice'
 
 interface TopicsState {
   topics: Topic[]
@@ -50,6 +51,20 @@ export const fetchTopics = createAsyncThunk(
   }
 )
 
+export const deleteTopicThunk = createAsyncThunk(
+  'topics/deleteTopic',
+  async (id: number, thunkAPI) => {
+    try {
+      await api.delete(`/topics/${id}/`)
+      // Refresh training plans to update hours if this topic was included
+      thunkAPI.dispatch(fetchTrainingPlans())
+      return id
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to delete topic')
+    }
+  }
+)
+
 const initialState: TopicsState = {
   topics: [],
   topicsTree: [],
@@ -91,10 +106,7 @@ const topicsSlice = createSlice({
         state.topicsTree = buildTopicsTree(state.topics)
       }
     },
-    deleteTopic: (state, action: PayloadAction<number>) => {
-      state.topics = state.topics.filter((t) => t.id !== action.payload)
-      state.topicsTree = buildTopicsTree(state.topics)
-    },
+    // deleteTopic reducer removed in favor of thunk
     selectTopic: (state, action: PayloadAction<Topic | null>) => {
       state.selectedTopic = action.payload
     },
@@ -127,7 +139,6 @@ export const {
   addTopic,
   updateTopic,
   updateTopicMastery,
-  deleteTopic,
   selectTopic,
   setError,
 } = topicsSlice.actions

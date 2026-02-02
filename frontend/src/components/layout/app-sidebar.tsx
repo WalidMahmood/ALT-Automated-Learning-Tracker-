@@ -14,6 +14,7 @@ import {
   Home,
   Users,
   X,
+  ShieldAlert,
 } from 'lucide-react'
 
 interface NavItem {
@@ -22,6 +23,7 @@ interface NavItem {
   icon: React.ReactNode
   adminOnly?: boolean
   learnerOnly?: boolean
+  superuserOnly?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -61,10 +63,10 @@ const navItems: NavItem[] = [
     adminOnly: true,
   },
   {
-    title: 'Leave Requests',
-    href: '/admin/leave',
-    icon: <Calendar className="h-4 w-4" />,
-    adminOnly: true,
+    title: 'Audit Logs',
+    href: '/admin/audit',
+    icon: <ShieldAlert className="h-4 w-4" />,
+    superuserOnly: true,
   },
 ]
 
@@ -77,6 +79,7 @@ export function AppSidebar() {
   const filteredNavItems = navItems.filter((item) => {
     if (item.adminOnly && user?.role !== 'admin') return false
     if (item.learnerOnly && user?.role !== 'learner') return false
+    if (item.superuserOnly && !user?.is_superuser) return false
     return true
   })
 

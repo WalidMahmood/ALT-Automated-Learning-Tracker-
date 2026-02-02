@@ -51,7 +51,7 @@ export const createEntry = createAsyncThunk(
       const newEntry = response.data
 
       // Refetch topics to update the hierarchy mastery across the app
-      thunkAPI.dispatch(fetchTopics())
+      await thunkAPI.dispatch(fetchTopics())
 
       return newEntry
     } catch (error: any) {
@@ -68,7 +68,7 @@ export const updateEntryThunk = createAsyncThunk(
       const updatedEntry = response.data
 
       // Refetch topics to update the hierarchy mastery across the app
-      thunkAPI.dispatch(fetchTopics())
+      await thunkAPI.dispatch(fetchTopics())
 
       return updatedEntry
     } catch (error: any) {
@@ -84,7 +84,7 @@ export const deleteEntryThunk = createAsyncThunk(
       await api.delete(`/entries/${id}/`)
 
       // On delete, refetch topics to handle hierarchy masteries cascading
-      thunkAPI.dispatch(fetchTopics())
+      await thunkAPI.dispatch(fetchTopics())
 
       return id
     } catch (error: any) {

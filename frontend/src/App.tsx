@@ -9,6 +9,7 @@ import EntriesPage from '@/pages/admin/entries/page'
 import TopicsPage from '@/pages/admin/topics/page'
 import TrainingPlansPage from '@/pages/admin/training-plans/page'
 import LeavePage from '@/pages/admin/leave/page'
+import AuditLogsPage from '@/pages/admin/audit/page'
 import HomePage from '@/pages/page'
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
                     <Route path="/admin/topics" element={<TopicsPage />} />
                     <Route path="/admin/training-plans" element={<TrainingPlansPage />} />
                     <Route path="/admin/leave" element={<LeavePage />} />
+                    <Route path="/admin/audit" element={<AuditLogsPage />} />
                 </Routes>
             </AppLayout>
         </RootLayout>

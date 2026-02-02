@@ -64,6 +64,7 @@ class TrainingPlanListCreateView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         plan = serializer.save()
+        
         logger.info(f"Training plan created: {plan.plan_name} (ID: {plan.id})")
         return Response(
             TrainingPlanSerializer(plan).data,
@@ -101,6 +102,7 @@ class TrainingPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         plan = serializer.save()
+        
         logger.info(f"Training plan updated: {plan.plan_name} (ID: {plan.id})")
         return Response(TrainingPlanSerializer(plan).data)
     
@@ -108,6 +110,7 @@ class TrainingPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
         """Archive the plan (soft delete)"""
         instance = self.get_object()
         instance.archive()
+        
         logger.info(f"Training plan archived: {instance.plan_name} (ID: {instance.id})")
         return Response(
             {'message': 'Training plan archived successfully'},
@@ -125,6 +128,7 @@ class TrainingPlanRestoreView(APIView):
         try:
             plan = TrainingPlan.objects.get(pk=pk)
             plan.restore()
+            
             logger.info(f"Training plan restored: {plan.plan_name} (ID: {plan.id})")
             return Response(
                 TrainingPlanSerializer(plan).data,
@@ -163,7 +167,7 @@ class TrainingPlanAssignView(APIView):
                 user = User.objects.get(pk=user_id, is_active=True)
                 # Check if already assigned
                 if not PlanAssignment.objects.filter(plan=plan, user=user).exists():
-                    PlanAssignment.objects.create(
+                    assignment = PlanAssignment.objects.create(
                         plan=plan,
                         user=user,
                         assigned_by_admin=request.user

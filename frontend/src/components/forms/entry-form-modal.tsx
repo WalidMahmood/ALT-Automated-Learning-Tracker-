@@ -197,8 +197,8 @@ export function EntryFormModal() {
       learned_text: formData.learned_text,
       progress_percent: formData.is_completed ? 100 : 0,
       is_completed: formData.is_completed,
-      blockers_text: blockerType && formData.blockers_text
-        ? `${blockerType}: ${formData.blockers_text}`
+      blockers_text: blockerType
+        ? `${blockerType}: ${formData.blockers_text || ''}`
         : formData.blockers_text || null,
     }
 
@@ -240,7 +240,32 @@ export function EntryFormModal() {
   }
 
 
+  /* 
+    Calculate "Effective Benchmark" for Parent Topics
+    If a topic has children, its benchmark is the SUM of its children's benchmarks.
+    This matches the logic in the Training Plan view.
+  */
+  const calculateEffectiveBenchmark = (topicId: number): number => {
+    const topic = topics.find(t => t.id === topicId)
+    if (!topic) return 0.0
+
+    // Direct children
+    const children = topics.filter(t => t.parent_id === topicId && t.is_active)
+
+    if (children.length > 0) {
+      // It's a parent -> Sum children (Recursively?)
+      // The Training Plan typically aggregates all descendants. 
+      // Let's do a recursive sum to be safe, or just direct children if that's how the model works.
+      // Based on 3-level depth (Category -> Topic -> Subtopic), recursion is safest.
+      return children.reduce((sum, child) => sum + calculateEffectiveBenchmark(child.id), 0)
+    }
+
+    // It's a leaf -> Return direct benchmark
+    return Number(topic.benchmark_hours) || 0.0
+  }
+
   const selectedTopic = topics.find((t) => t.id === formData.topic_id)
+  const selectedTopicBenchmark = selectedTopic ? calculateEffectiveBenchmark(selectedTopic.id) : 0
   const isViewOnly = !!(selectedEntry && !isEditing)
 
   // Determine Title
@@ -388,7 +413,7 @@ export function EntryFormModal() {
                   <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
                     <span>{selectedTopic?.name}</span>
                     <span className="text-xs text-muted-foreground ml-auto">
-                      Benchmark: ~{selectedTopic?.benchmark_hours}h
+                      Benchmark: ~{selectedTopicBenchmark.toFixed(1)}h
                     </span>
                   </div>
                 ) : (
@@ -410,7 +435,7 @@ export function EntryFormModal() {
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium text-primary">Selected: {selectedTopic.name}</span>
                           <span className="text-xs text-muted-foreground ml-auto">
-                            Benchmark: ~{selectedTopic.benchmark_hours}h
+                            Benchmark: ~{selectedTopicBenchmark.toFixed(1)}h
                           </span>
                         </div>
                         {selectedTopic.mastery?.is_locked && (
@@ -553,7 +578,7 @@ export function EntryFormModal() {
                   )}
                   {selectedTopic && (
                     <span className="text-xs text-muted-foreground">
-                      Topic benchmark: ~{selectedTopic.benchmark_hours} hours
+                      Topic benchmark: ~{selectedTopicBenchmark.toFixed(1)} hours
                     </span>
                   )}
                 </div>

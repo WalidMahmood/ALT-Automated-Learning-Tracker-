@@ -32,12 +32,8 @@ export function LoginForm() {
       const { user, access, refresh } = response.data
       dispatch(loginSuccess({ user, access, refresh }))
 
-      // Role-based redirection
-      if (user.role === 'admin') {
-        navigate('/admin/users')
-      } else {
-        navigate('/dashboard')
-      }
+      // Redirect all roles to dashboard (content adjusts based on role)
+      navigate('/dashboard')
     } catch (err: any) {
       console.error('Login error:', err)
 

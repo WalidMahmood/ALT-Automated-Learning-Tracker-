@@ -29,6 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             'tech_stack',
             'role',
             'is_active',
+            'is_superuser',
             'created_at',
             'updated_at',
         ]
@@ -186,6 +187,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'experience_years',
             'tech_stack',
             'role',
+            'is_superuser',
             'created_at',
             'updated_at',
         ]

@@ -11,6 +11,7 @@ export interface User {
   tech_stack: string[]
   role: UserRole
   is_active: boolean
+  is_superuser: boolean
   created_at: string
   updated_at: string
 }
@@ -138,11 +139,13 @@ export type AuditAction =
 export interface AuditLog {
   id: number
   user_id: number | null
+  user_email?: string
   user?: User
   action: AuditAction
   entity_type: string
   entity_id: number
   target_user_id: number | null
+  target_user_email?: string
   before_state: Record<string, unknown> | null
   after_state: Record<string, unknown> | null
   reason: string | null

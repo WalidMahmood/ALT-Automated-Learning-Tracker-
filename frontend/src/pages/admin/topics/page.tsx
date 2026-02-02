@@ -39,7 +39,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { BookOpen, MoreHorizontal, Plus, Search, Pencil, Trash2, ChevronRight, CornerDownRight, ChevronDown, Filter } from 'lucide-react'
 import { mockEntries } from '@/lib/mock-data'
-import { useAppSelector } from '@/lib/store/hooks'
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks'
+import { deleteTopicThunk } from '@/lib/store/slices/topicsSlice'
 import { Navigate } from 'react-router-dom'
 import type { Topic } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -47,6 +48,7 @@ import { ParentTopicSelector } from '@/components/forms/parent-topic-selector'
 import api from '@/lib/api'
 
 export default function TopicsPage() {
+    const dispatch = useAppDispatch()
     const { user } = useAppSelector((state) => state.auth)
     const [topics, setTopics] = useState<Topic[]>([])
     const [searchQuery, setSearchQuery] = useState('')
@@ -135,7 +137,8 @@ export default function TopicsPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await api.delete(`/topics/${id}/`)
+            await dispatch(deleteTopicThunk(id)).unwrap()
+            // Manually remove from local state for immediate UI update, though fetching happens in background
             setTopics(prev => prev.filter(t => t.id !== id && t.parent_id !== id))
         } catch (error) {
             console.error('Failed to delete topic:', error)
@@ -251,7 +254,7 @@ export default function TopicsPage() {
                             </TableHeader>
                             <TableBody>
                                 {displayTopics.map((topic) => {
-                                    const topicEntries = mockEntries.filter(e => e.topic_id === topic.id)
+                                    const topicEntries = mockEntries.filter(e => e.topic === topic.id)
                                     const totalHours = topicEntries.reduce((sum, e) => sum + e.hours, 0)
                                     const parent = topics.find(t => t.id === topic.parent_id)
                                     const isExpanded = expandedNodes.has(topic.id)
