@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import AuditLogViewSet
 
 router = DefaultRouter()
-router.register(r'', AuditLogViewSet, basename='audit-logs')
+router.register(r'logs', AuditLogViewSet, basename='audit-logs')
 
 urlpatterns = [
     path('', include(router.urls)),

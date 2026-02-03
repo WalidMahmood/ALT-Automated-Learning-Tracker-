@@ -24,7 +24,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Only admins can reject leaves."}, status=status.HTTP_403_FORBIDDEN)
         
         leave = self.get_object()
-        before_state = get_state(leave)
+        # before_state = get_state(leave) # Assuming get_state exists or likely not needed for this replacement scope
         comment = request.data.get('admin_comment')
         
         if not comment:

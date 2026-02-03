@@ -121,31 +121,22 @@ export interface LeaveRequest {
 }
 
 // Audit Log Types
-export type AuditAction =
-  | 'create_entry'
-  | 'update_entry'
-  | 'delete_entry'
-  | 'request_leave'
-  | 'cancel_leave'
-  | 'view_dashboard'
-  | 'override_entry'
-  | 'approve_leave'
-  | 'reject_entry'
-  | 'create_topic'
-  | 'edit_training_plan'
-  | 'assign_plan'
-  | 'soft_delete_user'
+// Audit Log Types
+export type AuditAction = string
 
 export interface AuditLog {
   id: number
-  user_id: number | null
+  user_id: number | null // Use this if your backend sends user_id separately
   user_email?: string
-  user?: User
+  user?: number | User // Can be ID or object depending on serializer
+  target_user_email?: string
   action: AuditAction
   entity_type: string
-  entity_id: number
-  target_user_id: number | null
-  target_user_email?: string
+  entity_id: string | number // Changed to allow string IDs if needed (e.g. usernames)
+  target_entity?: string // Who was affected by this action
+  status?: string // Added
+  metadata?: Record<string, any> // Added
+  request_id?: string // Added
   before_state: Record<string, unknown> | null
   after_state: Record<string, unknown> | null
   reason: string | null

@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'apps.entries.apps.EntriesConfig',
     'apps.leaves.apps.LeavesConfig',
     'apps.audit',
+
 ]
 
 MIDDLEWARE = [
@@ -91,7 +92,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.audit.middleware.AuditMiddleware',
+    'apps.audit.middleware.RequestIdMiddleware',
+
 ]
 
 ROOT_URLCONF = 'config.urls'

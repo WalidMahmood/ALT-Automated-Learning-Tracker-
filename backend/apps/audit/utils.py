@@ -1,59 +1,27 @@
-from .models import AuditLog
-import json
-from django.core.serializers.json import DjangoJSONEncoder
-from django.forms.models import model_to_dict
+from threading import local
 
+_thread_locals = local()
 
-def get_state(instance):
-    """
-    Returns a dictionary representation of a model instance, 
-    ensuring it is JSON serializable.
-    """
-    if not instance:
-        return None
-    
-    # model_to_dict includes many-to-many but converts dates to objects
-    data = model_to_dict(instance)
-    
-    # We use DjangoJSONEncoder to handle dates, decimals, etc.
-    # We serialize and deserialize to get a clean dictionary of primitives
-    return json.loads(json.dumps(data, cls=DjangoJSONEncoder))
+def set_current_request(request):
+    _thread_locals.request = request
 
+def get_current_request():
+    return getattr(_thread_locals, 'request', None)
 
-def log_action(request, action, entity_type, entity_id, target_user=None, before_state=None, after_state=None, reason=None, comment=None):
-    """
-    Helper function to create an audit log entry.
-    """
-    ip_address = None
-    user_agent = None
-    user = None
-
+def get_current_user():
+    request = get_current_request()
     if request:
-        # Extract IP address
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip_address = x_forwarded_for.split(',')[0]
-        else:
-            ip_address = request.META.get('REMOTE_ADDR')
+        return getattr(request, 'user', None)
+    return None
 
-        # Extract User Agent
-        user_agent = request.META.get('HTTP_USER_AGENT', '')
-        
-        # User
-        if hasattr(request, 'user') and request.user.is_authenticated:
-            user = request.user
+def get_request_id():
+    request = get_current_request()
+    if request:
+        return getattr(request, 'request_id', None)
+    return getattr(_thread_locals, 'request_id', None) # Fallback if set manually
 
-    # Create the log
-    return AuditLog.objects.create(
-        user=user,
-        action=action,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        target_user=target_user,
-        before_state=before_state,
-        after_state=after_state,
-        reason=reason,
-        comment=comment,
-        ip_address=ip_address,
-        user_agent=user_agent
-    )
+def clear_thread_locals():
+    if hasattr(_thread_locals, 'request'):
+        del _thread_locals.request
+    if hasattr(_thread_locals, 'request_id'):
+        del _thread_locals.request_id

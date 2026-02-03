@@ -20,6 +20,7 @@ from .serializers import (
 )
 from .permissions import IsAdmin, IsOwnerOrAdmin
 from .utils import mask_email
+from apps.audit.services import log_audit
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,20 @@ class LoginView(APIView):
             
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
+
+            # Audit Log: Login Success
+            log_audit(
+                user=user,
+                action='LOGIN',
+                entity_type='User',
+                entity_id=user.id,
+                status='SUCCESS',
+                request_id=getattr(request, 'request_id', None),
+                metadata={
+                    'ip_address': request.META.get('REMOTE_ADDR'),
+                    'user_agent': request.META.get('HTTP_USER_AGENT', '')
+                }
+            )
             
             # Return tokens and user profile
             return Response({
@@ -48,6 +63,21 @@ class LoginView(APIView):
                 'user': UserSerializer(user).data,
             }, status=status.HTTP_200_OK)
         except serializers.ValidationError as e:
+            # Audit Log: Login Failure
+            username = request.data.get('username') or request.data.get('email')
+            log_audit(
+                user=None,
+                action='LOGIN_ATTEMPT',
+                entity_type='User',
+                entity_id=username or 'unknown',
+                status='FAILURE',
+                request_id=getattr(request, 'request_id', None),
+                metadata={
+                    'ip_address': request.META.get('REMOTE_ADDR'),
+                    'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+                    'reason': 'Invalid credentials'
+                }
+            )
             return Response(
                 e.detail,
                 status=status.HTTP_401_UNAUTHORIZED
@@ -80,6 +110,19 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
             
+            # Audit Log: Logout
+            log_audit(
+                user=request.user,
+                action='LOGOUT',
+                entity_type='User',
+                entity_id=request.user.id,
+                status='SUCCESS',
+                request_id=getattr(request, 'request_id', None),
+                metadata={
+                    'ip_address': request.META.get('REMOTE_ADDR'),
+                }
+            )
+
             return Response(
                 {'message': 'Logged out successfully'},
                 status=status.HTTP_200_OK

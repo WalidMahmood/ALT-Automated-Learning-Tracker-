@@ -1,27 +1,25 @@
-import threading
+import uuid
+from .utils import set_current_request, clear_thread_locals
 
-_thread_locals = threading.local()
-
-def get_current_request():
-    """
-    Returns the current request from thread-local storage.
-    """
-    return getattr(_thread_locals, 'request', None)
-
-class AuditMiddleware:
-    """
-    Middleware that stores the current request in thread-local storage
-    so it can be accessed by signals.
-    """
+class RequestIdMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        _thread_locals.request = request
+        # 1. Generate/Get Request ID
+        request_id = str(uuid.uuid4())
+        request.request_id = request_id
+        
+        # 2. Store Request globally (for Signal access later)
+        # Note: We store the request object itself so that when DRF authenticates
+        # later in the view, we can still access the updated request.user
+        set_current_request(request)
+
         try:
             response = self.get_response(request)
         finally:
-            # Clean up to avoid memory leaks
-            if hasattr(_thread_locals, 'request'):
-                del _thread_locals.request
+            # 3. Clean up
+            clear_thread_locals()
+
+        response['X-Request-ID'] = request_id
         return response

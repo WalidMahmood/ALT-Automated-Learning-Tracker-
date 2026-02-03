@@ -1,37 +1,17 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, pagination
 from .models import AuditLog
 from .serializers import AuditLogSerializer
+from apps.users.permissions import IsAdmin
 
-
-class IsSuperUser(permissions.BasePermission):
-    """
-    Custom permission to only allow superusers to access.
-    """
-    def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
-
+class StandardResultsSetPagination(pagination.PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet for viewing audit logs. Only accessible by Super Admin.
-    """
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogSerializer
-    permission_classes = [IsSuperUser]
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        
-        # Filtering
-        action = self.request.query_params.get('action')
-        entity_type = self.request.query_params.get('entity_type')
-        user_id = self.request.query_params.get('user_id')
-        
-        if action:
-            queryset = queryset.filter(action=action)
-        if entity_type:
-            queryset = queryset.filter(entity_type=entity_type)
-        if user_id:
-            queryset = queryset.filter(user_id=user_id)
-            
-        return queryset
+    permission_classes = [IsAdmin] 
+    pagination_class = StandardResultsSetPagination
+    filterset_fields = ['action', 'entity_type', 'status', 'user']
+    search_fields = ['entity_id', 'request_id', 'action']

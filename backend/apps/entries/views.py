@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Entry
 from .serializers import EntrySerializer
+from .serializers import EntrySerializer
 
 
 class EntryViewSet(viewsets.ModelViewSet):

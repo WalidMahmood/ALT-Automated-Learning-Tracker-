@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import {
     Card,
@@ -15,13 +15,6 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from '@/components/ui/dialog'
-import {
     Select,
     SelectContent,
     SelectItem,
@@ -31,14 +24,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
     ShieldAlert,
     Search,
     Eye,
     History,
     User as UserIcon,
-    Activity,
 } from 'lucide-react'
 import { useAppSelector } from '@/lib/store/hooks'
 import api from '@/lib/api'
@@ -47,28 +38,43 @@ import { toast } from 'sonner'
 
 export default function AuditLogsPage() {
     const { user: currentUser } = useAppSelector((state) => state.auth)
+    const navigate = useNavigate()
     const [logs, setLogs] = useState<AuditLog[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
 
     // Filters
     const [searchQuery, setSearchQuery] = useState('')
     const [actionFilter, setActionFilter] = useState('all')
     const [entityFilter, setEntityFilter] = useState('all')
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalCount, setTotalCount] = useState(0)
+
     useEffect(() => {
         if (currentUser?.is_superuser) {
-            fetchLogs()
+            fetchLogs(currentPage)
         }
-    }, [currentUser])
+    }, [currentUser, currentPage])
 
-    const fetchLogs = async () => {
+    const fetchLogs = async (page: number = 1) => {
+        if (!currentUser?.is_superuser) return
         setIsLoading(true)
         try {
-            const response = await api.get('/audit/')
-            // The API might be paginated, check if it's in .results or direct array
+            const response = await api.get('/audit/logs/', {
+                params: { page }
+            })
+            // The API is paginated
             const data = response.data.results || response.data
             setLogs(data)
+
+            // Set pagination info
+            if (response.data.count) {
+                setTotalCount(response.data.count)
+                const pageSize = 50 // matches backend
+                setTotalPages(Math.ceil(response.data.count / pageSize))
+            }
         } catch (error: any) {
             console.error('Failed to fetch audit logs:', error)
             toast.error('Failed to load audit logs')
@@ -119,7 +125,7 @@ export default function AuditLogsPage() {
                         Immutable trail of all system activities (Super Admin only)
                     </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchLogs} disabled={isLoading} className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => fetchLogs(currentPage)} disabled={isLoading} className="gap-2">
                     <History className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     Refresh
                 </Button>
@@ -205,7 +211,7 @@ export default function AuditLogsPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => setSelectedLog(log)}
+                                                    onClick={() => navigate(`/admin/audit/${log.id}`)}
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
@@ -216,79 +222,84 @@ export default function AuditLogsPage() {
                             </TableBody>
                         </Table>
                     </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between px-2 py-4 border-t">
+                            <div className="text-sm text-muted-foreground">
+                                Page {currentPage} of {totalPages} • Total: {totalCount} logs
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    First
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+
+                                {/* Page Numbers */}
+                                <div className="flex gap-1 mx-2">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                        .filter(page => {
+                                            // Show first page, last page, current page, and adjacent pages
+                                            if (page === 1 || page === totalPages) return true
+                                            if (Math.abs(page - currentPage) <= 1) return true
+                                            return false
+                                        })
+                                        .map((page, idx, arr) => {
+                                            // Add ellipsis where needed
+                                            const showEllipsisBefore = idx > 0 && page - arr[idx - 1] > 1
+                                            return (
+                                                <div key={`page-wrapper-${page}`} className="flex items-center gap-1">
+                                                    {showEllipsisBefore && (
+                                                        <span className="px-2 py-1 text-muted-foreground">
+                                                            ...
+                                                        </span>
+                                                    )}
+                                                    <Button
+                                                        variant={currentPage === page ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => setCurrentPage(page)}
+                                                        className="min-w-[40px]"
+                                                    >
+                                                        {page}
+                                                    </Button>
+                                                </div>
+                                            )
+                                        })}
+                                </div>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Last
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
-
-            <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-                <DialogContent className="max-w-3xl max-h-[90vh]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Activity className="h-5 w-5 text-primary" />
-                            Audit Log Details
-                        </DialogTitle>
-                        <DialogDescription>
-                            Action "{selectedLog?.action}" performed by {selectedLog?.user_email}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <ScrollArea className="mt-4 max-h-[60vh] pr-4">
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Timestamp</p>
-                                    <p className="font-mono">{selectedLog && format(new Date(selectedLog.created_at), 'PPpp')}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">IP Address</p>
-                                    <p className="font-mono">{selectedLog?.ip_address || 'N/A'}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Target User</p>
-                                    <p className="font-mono">{selectedLog?.target_user_email || 'N/A'}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">User Agent</p>
-                                    <p className="text-[10px] leading-tight text-muted-foreground break-all">
-                                        {selectedLog?.user_agent}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {(selectedLog?.before_state || selectedLog?.after_state) && (
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                                        <History className="h-4 w-4" />
-                                        State Changes
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Before</p>
-                                            <pre className="p-3 bg-muted rounded-md text-[10px] font-mono overflow-auto max-h-[300px]">
-                                                {JSON.stringify(selectedLog.before_state, null, 2) || 'null'}
-                                            </pre>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-primary">After</p>
-                                            <pre className="p-3 bg-primary/5 border border-primary/20 rounded-md text-[10px] font-mono overflow-auto max-h-[300px]">
-                                                {JSON.stringify(selectedLog.after_state, null, 2) || 'null'}
-                                            </pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {selectedLog?.reason && (
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Reason/Comment</p>
-                                    <div className="p-3 bg-muted/40 rounded-md text-sm italic">
-                                        "{selectedLog.reason}"
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </ScrollArea>
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }
