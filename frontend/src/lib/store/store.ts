@@ -5,6 +5,7 @@ import topicsReducer from './slices/topicsSlice'
 import usersReducer from './slices/usersSlice'
 import trainingPlansReducer from './slices/trainingPlansSlice'
 import leaveRequestsReducer from './slices/leaveRequestsSlice'
+import projectsReducer from './slices/projectsSlice'
 import uiReducer from './slices/uiSlice'
 
 export const store = configureStore({
@@ -15,6 +16,7 @@ export const store = configureStore({
     users: usersReducer,
     trainingPlans: trainingPlansReducer,
     leaveRequests: leaveRequestsReducer,
+    projects: projectsReducer,
     ui: uiReducer,
   },
 })

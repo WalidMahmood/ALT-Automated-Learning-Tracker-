@@ -254,7 +254,7 @@ export default function UsersPage() {
                                             {plans.filter(p => p.assignments?.some(a => (a.user_id || a.user?.id) === learner.id)).length > 0 ? (
                                                 <div className="flex flex-wrap gap-1">
                                                     {plans.filter(p => p.assignments?.some(a => (a.user_id || a.user?.id) === learner.id)).map(plan => (
-                                                        <Badge key={plan.id} variant="secondary" className="flex items-center gap-1 text-[10px] py-0 h-5 px-2 bg-primary/5 text-primary border-primary/20">
+                                                        <Badge key={plan.id} variant="secondary" className="flex items-center gap-1 text-xs py-0 h-5 px-2 bg-primary/5 text-primary border-primary/20">
                                                             <BookOpen className="h-3 w-3" />
                                                             <span>{plan.plan_name}</span>
                                                         </Badge>

@@ -187,7 +187,7 @@ export function ParentTopicSelector({ value, onChange, allTopics, currentTopicId
                                                 {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
                                             </div>
                                             {topic.path && (
-                                                <span className="text-[10px] text-muted-foreground truncate opacity-70">
+                                                <span className="text-xs text-muted-foreground truncate opacity-70">
                                                     {topic.path}
                                                 </span>
                                             )}

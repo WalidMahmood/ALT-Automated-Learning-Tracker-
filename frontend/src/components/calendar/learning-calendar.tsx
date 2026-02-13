@@ -47,7 +47,8 @@ function getStatusColor(status: string): string {
     case 'approved':
       return 'bg-success/20 text-success-foreground border-success/30'
     case 'pending':
-      return 'bg-warning/20 text-warning-foreground border-warning/30'
+    case 'analyzing':
+      return 'bg-amber-500/20 text-amber-700 border-amber-500/30'
     case 'flagged':
       return 'bg-destructive/20 text-destructive border-destructive/30'
     case 'rejected':
@@ -73,6 +74,22 @@ export function LearningCalendar() {
     dispatch(fetchEntries({}))
     dispatch(fetchLeaveRequests())
   }, [dispatch, viewDate])
+
+  // Auto-refresh: poll every 5s while any entry is still pending AI analysis
+  const hasPendingEntries = useMemo(
+    () => entries.some((e: Entry) => e.ai_status === 'pending'),
+    [entries]
+  )
+
+  useEffect(() => {
+    if (!hasPendingEntries) return
+
+    const intervalId = setInterval(() => {
+      dispatch(fetchEntries({}))
+    }, 5000)
+
+    return () => clearInterval(intervalId)
+  }, [dispatch, hasPendingEntries])
 
   // Helper to generate days for a given range
   const getDaysForRange = (startDate: Date, endDate: Date, entries: any[]) => {
@@ -337,20 +354,22 @@ export function LearningCalendar() {
               <div className="mt-1 space-y-1">
                 {day.entries.slice(0, calendarView === 'month' ? 2 : undefined).map((entry) => {
                   const topic = topics.find((t) => t.id === entry.topic)
+                  const isProject = entry.intent === 'sbu_tasks'
+                  const chipLabel = isProject ? (entry.project_name || entry.intent?.replace('_', ' ')) : topic?.name
                   return (
                     <div
                       key={entry.id}
                       className={cn(
                         'rounded px-1.5 py-0.5 text-xs border flex items-center justify-between gap-1 group',
                         getStatusColor(entry.status),
-                        // For day view, give more padding
+                        isProject && 'border-l-2 border-l-indigo-400 dark:border-l-indigo-500',
                         calendarView === 'day' && 'p-2'
                       )}
                     >
-                      <span className="truncate font-medium">{topic?.name}</span>
+                      <span className="truncate font-medium">{isProject && <span className="text-xs mr-0.5">🛠️</span>}{chipLabel}</span>
                       {/* Show hours in day/week view */}
                       {(calendarView !== 'month') && (
-                        <span className="opacity-70 text-[10px]">{entry.hours}h</span>
+                        <span className="opacity-70 text-xs">{entry.hours}h</span>
                       )}
                     </div>
                   )
@@ -373,8 +392,8 @@ export function LearningCalendar() {
           <span className="text-muted-foreground">Approved</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-warning/20 border border-warning/30" />
-          <span className="text-muted-foreground">Pending</span>
+          <div className="h-3 w-3 rounded bg-amber-500/20 border border-amber-500/30" />
+          <span className="text-muted-foreground">Analyzing</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-destructive/20 border border-destructive/30" />

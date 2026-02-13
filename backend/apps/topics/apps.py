@@ -7,4 +7,4 @@ class TopicsConfig(AppConfig):
     verbose_name = 'Topics'
 
     def ready(self):
-        import apps.topics.signals
+        pass

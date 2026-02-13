@@ -164,7 +164,7 @@ export function DrillDownModal({
                                                     <TableCell>
                                                         <div className="flex flex-col">
                                                             <span className="font-semibold text-sm">{user?.name}</span>
-                                                            <span className="text-[10px] text-muted-foreground">ID: {user?.id}</span>
+                                                            <span className="text-xs text-muted-foreground">ID: {user?.id}</span>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-right">
@@ -218,7 +218,7 @@ export function DrillDownModal({
                     </div>
                 </ScrollArea>
                 {viewType === 'entries' && entries.length > 0 && (
-                    <div className="pt-4 border-t text-[10px] text-muted-foreground italic flex justify-between">
+                    <div className="pt-4 border-t text-xs text-muted-foreground italic flex justify-between">
                         <span>Click row to see Level 3 details</span>
                         <span>Total {entries.length} items</span>
                     </div>

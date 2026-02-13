@@ -5,7 +5,7 @@ import Loading from './loading'
 import { useState, useMemo, useEffect } from 'react'
 
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,7 +27,6 @@ import {
 } from '@/components/ui/table'
 import { Search, ArrowUpDown, Loader2 } from 'lucide-react'
 import { Entry, EntryStatus, User, Topic } from '@/lib/types'
-import { EntryDetailModal } from '@/components/admin/entry-detail-modal'
 import { OverrideModal } from '@/components/admin/override-modal'
 import { fetchEntries } from '@/lib/store/slices/entriesSlice'
 import { fetchTopics } from '@/lib/store/slices/topicsSlice'
@@ -54,9 +53,9 @@ function AdminEntriesContent() {
   const { entries, isLoading } = useAppSelector((state) => state.entries)
   const { topics } = useAppSelector((state) => state.topics)
   const { users } = useAppSelector((state) => state.users)
+  const navigate = useNavigate()
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
   const [overrideModalOpen, setOverrideModalOpen] = useState(false)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
 
   // Redirect non-admins
   if (user?.role !== 'admin') {
@@ -66,13 +65,10 @@ function AdminEntriesContent() {
   const handleOverride = (entry: Entry) => {
     setSelectedEntry(entry)
     setOverrideModalOpen(true)
-    setDetailModalOpen(false) // Close detail modal if it's open
   }
 
   const handleViewEntry = (entry: Entry) => {
-    setSelectedEntry(entry)
-    setDetailModalOpen(true)
-    setOverrideModalOpen(false) // Close override modal if it's open
+    navigate(`/admin/entries/${entry.id}`)
   }
 
   return (
@@ -91,13 +87,6 @@ function AdminEntriesContent() {
         isLoading={isLoading}
         onOverride={handleOverride}
         onViewEntry={handleViewEntry}
-      />
-
-      {/* Entry Detail Modal (Level 3) */}
-      <EntryDetailModal
-        entry={detailModalOpen ? selectedEntry : null}
-        onClose={() => setDetailModalOpen(false)}
-        onOverride={handleOverride}
       />
 
       {/* Override Modal (Global) */}
@@ -125,18 +114,22 @@ function AllEntriesView({ entries, users, topics, isLoading, onOverride, onViewE
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<EntryStatus | 'all'>('all')
+  const [intentFilter, setIntentFilter] = useState<'all' | 'topic' | 'project'>('all')
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' })
   const [pageSize, setPageSize] = useState(50)
 
   const processedEntries = useMemo(() => {
     let results = entries.filter((entry: Entry) => {
       if (statusFilter !== 'all' && entry.status !== statusFilter) return false
+      if (intentFilter === 'topic' && entry.intent === 'sbu_tasks') return false
+      if (intentFilter === 'project' && entry.intent !== 'sbu_tasks') return false
       if (searchQuery) {
         const u = users.find((u: User) => u.id === entry.user)
         const t = topics.find((t: Topic) => t.id === entry.topic)
         return (
           u?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           t?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          entry.project_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           entry.date.includes(searchQuery)
         )
       }
@@ -156,7 +149,7 @@ function AllEntriesView({ entries, users, topics, isLoading, onOverride, onViewE
     }
 
     return results.slice(0, pageSize)
-  }, [entries, users, topics, searchQuery, statusFilter, sortConfig, pageSize])
+  }, [entries, users, topics, searchQuery, statusFilter, intentFilter, sortConfig, pageSize])
 
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc'
@@ -190,6 +183,17 @@ function AllEntriesView({ entries, users, topics, isLoading, onOverride, onViewE
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="flagged">Flagged</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={intentFilter} onValueChange={(v) => setIntentFilter(v as any)}>
+                <SelectTrigger className="w-[140px] h-10">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="topic">L&D Tasks</SelectItem>
+                  <SelectItem value="project">SBU Tasks</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -243,17 +247,21 @@ function AllEntriesView({ entries, users, topics, isLoading, onOverride, onViewE
                   return (
                     <TableRow key={entry.id} className="hover:bg-muted/30">
                       <TableCell className="py-4 font-medium">{user?.name || 'Unknown'}</TableCell>
-                      <TableCell className="py-4">{topic?.name || 'Unknown'}</TableCell>
+                      <TableCell className="py-4">
+                        {entry.intent === 'sbu_tasks'
+                          ? <span className="flex items-center gap-1"><span className="text-xs">🛠️</span>{entry.project_name || 'Project'}</span>
+                          : (topic?.name || 'Unknown')}
+                      </TableCell>
                       <TableCell className="py-4 text-muted-foreground">{entry.date}</TableCell>
                       <TableCell className="py-4">
                         {entry.ai_status === 'analyzed' ? (
-                          <Badge variant={entry.ai_decision === 'approve' ? 'default' : 'secondary'} className="text-[10px] font-bold">
+                          <Badge variant={entry.ai_decision === 'approve' ? 'default' : 'secondary'} className="text-xs font-bold">
                             {entry.ai_decision?.toUpperCase()} ({entry.ai_confidence}%)
                           </Badge>
                         ) : <span className="text-xs text-muted-foreground">Not Analyzed</span>}
                       </TableCell>
                       <TableCell className="py-4">
-                        <Badge variant={entry.status === 'flagged' ? 'destructive' : 'outline'} className="text-[10px] font-bold">
+                        <Badge variant={entry.status === 'flagged' ? 'destructive' : 'outline'} className="text-xs font-bold">
                           {entry.status.toUpperCase()}
                         </Badge>
                       </TableCell>

@@ -133,5 +133,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   }
+}
+
+/* ── Readability: ensure minimum readable font size globally ── */
+.text-xs {
+  font-size: 0.8125rem !important;  /* 13px instead of 12px */
+  line-height: 1.5 !important;
 }

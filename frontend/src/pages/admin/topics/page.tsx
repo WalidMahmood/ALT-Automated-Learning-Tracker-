@@ -290,10 +290,10 @@ export default function TopicsPage() {
                                                             <div className="flex flex-col">
                                                                 <div className="flex items-center gap-2">
                                                                     <span>{topic.name}</span>
-                                                                    {!topic.is_active && <Badge variant="outline" className="text-[9px] py-0 h-4 uppercase tracking-wider">Inactive</Badge>}
+                                                                    {!topic.is_active && <Badge variant="outline" className="text-xs py-0 h-4 uppercase tracking-wider">Inactive</Badge>}
                                                                 </div>
                                                                 {(topic.path || (parent && !isExpanded && searchQuery)) && (
-                                                                    <span className="text-[10px] text-muted-foreground uppercase">
+                                                                    <span className="text-xs text-muted-foreground uppercase">
                                                                         {topic.path ? `In ${topic.path}` : `Part of ${parent?.name}`}
                                                                     </span>
                                                                 )}
@@ -400,6 +400,7 @@ function TopicDialog({
     const [formData, setFormData] = useState<Partial<Topic>>({
         name: '',
         benchmark_hours: 0,
+        difficulty: 3,
         parent_id: null,
         ...topic
     })
@@ -411,6 +412,7 @@ function TopicDialog({
             setFormData({
                 name: '',
                 benchmark_hours: 0,
+                difficulty: 3,
                 parent_id: null,
                 ...topic
             })
@@ -455,6 +457,27 @@ function TopicDialog({
                         />
                         <p className="text-xs text-muted-foreground">
                             Expected hours to complete this topic
+                        </p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="difficulty">Difficulty Level</Label>
+                        <Select
+                            value={String(formData.difficulty ?? 3)}
+                            onValueChange={(value) => setFormData({ ...formData, difficulty: Number(value) })}
+                        >
+                            <SelectTrigger id="difficulty">
+                                <SelectValue placeholder="Select difficulty" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1">1 - Beginner</SelectItem>
+                                <SelectItem value="2">2 - Easy</SelectItem>
+                                <SelectItem value="3">3 - Intermediate</SelectItem>
+                                <SelectItem value="4">4 - Advanced</SelectItem>
+                                <SelectItem value="5">5 - Expert</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                            How challenging this topic is (affects AI time expectations)
                         </p>
                     </div>
                     <div className="space-y-2">

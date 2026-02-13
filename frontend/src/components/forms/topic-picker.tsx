@@ -86,7 +86,7 @@ export function TopicPicker({ onSelect, allTopics, excludeTopicIds = [], placeho
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full justify-start gap-2 h-7 border-dashed bg-muted/20 hover:bg-muted/40 transition-colors text-[11px]">
+                <Button variant="outline" size="sm" className="w-full justify-start gap-2 h-7 border-dashed bg-muted/20 hover:bg-muted/40 transition-colors text-xs">
                     <Plus className="h-3 w-3" />
                     <span className="text-muted-foreground/80 font-normal">{placeholder}</span>
                 </Button>
@@ -110,7 +110,7 @@ export function TopicPicker({ onSelect, allTopics, excludeTopicIds = [], placeho
                             type="button"
                             onClick={() => setCurrentParentId(null)}
                             className={cn(
-                                "text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-md transition-colors",
+                                "text-xs uppercase tracking-wider font-semibold px-2 py-1 rounded-md transition-colors",
                                 currentParentId === null ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"
                             )}
                         >
@@ -123,7 +123,7 @@ export function TopicPicker({ onSelect, allTopics, excludeTopicIds = [], placeho
                                     type="button"
                                     onClick={() => setCurrentParentId(crumb.id)}
                                     className={cn(
-                                        "text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-md transition-colors",
+                                        "text-xs uppercase tracking-wider font-semibold px-2 py-1 rounded-md transition-colors",
                                         crumb.id === currentParentId ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"
                                     )}
                                 >
@@ -163,7 +163,7 @@ export function TopicPicker({ onSelect, allTopics, excludeTopicIds = [], placeho
                                                 {isExcluded && <Check className="h-3 w-3 text-primary shrink-0" />}
                                             </div>
                                             {(topic as any).path && (
-                                                <span className="text-[10px] text-muted-foreground truncate opacity-70">
+                                                <span className="text-xs text-muted-foreground truncate opacity-70">
                                                     {(topic as any).path}
                                                 </span>
                                             )}
@@ -191,7 +191,7 @@ export function TopicPicker({ onSelect, allTopics, excludeTopicIds = [], placeho
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="w-full justify-start text-[10px] uppercase tracking-wider font-semibold text-muted-foreground h-8"
+                            className="w-full justify-start text-xs uppercase tracking-wider font-semibold text-muted-foreground h-8"
                             onClick={() => {
                                 const parent = activeTopics.find(t => t.id === currentParentId)
                                 setCurrentParentId(parent?.parent_id ?? null)

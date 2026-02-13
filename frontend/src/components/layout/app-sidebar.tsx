@@ -11,6 +11,7 @@ import {
   Calendar,
   ClipboardList,
   FileText,
+  FolderKanban,
   Home,
   Users,
   X,
@@ -42,6 +43,12 @@ const navItems: NavItem[] = [
     title: 'My Training Plan',
     href: '/training-plan',
     icon: <ClipboardList className="h-4 w-4" />,
+    learnerOnly: true,
+  },
+  {
+    title: 'My Projects',
+    href: '/projects',
+    icon: <FolderKanban className="h-4 w-4" />,
     learnerOnly: true,
   },
   {

@@ -3,9 +3,19 @@ import type { Entry, EntryStatus } from '@/lib/types'
 import api from '@/lib/api'
 import { fetchTopics } from './topicsSlice'
 
+export interface UserProject {
+  id: number
+  name: string
+  description: string | null
+  entry_count: number
+  latest_date: string
+  is_completed: boolean
+}
+
 interface EntriesState {
   entries: Entry[]
   selectedEntry: Entry | null
+  userProjects: UserProject[]
   isLoading: boolean
   error: string | null
   filters: {
@@ -19,6 +29,7 @@ interface EntriesState {
 const initialState: EntriesState = {
   entries: [],
   selectedEntry: null,
+  userProjects: [],
   isLoading: false,
   error: null,
   filters: {
@@ -93,6 +104,30 @@ export const deleteEntryThunk = createAsyncThunk(
   }
 )
 
+export const overrideEntry = createAsyncThunk(
+  'entries/override',
+  async ({ entryId, status, reason, comment }: { entryId: number; status: string; reason: string; comment: string }, thunkAPI) => {
+    try {
+      const response = await api.post(`/entries/${entryId}/override/`, { status, reason, comment })
+      return response.data
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data || 'Failed to override entry')
+    }
+  }
+)
+
+export const fetchUserProjects = createAsyncThunk(
+  'entries/fetchUserProjects',
+  async (_, thunkAPI) => {
+    try {
+      const response = await api.get('/entries/user_projects/')
+      return response.data as UserProject[]
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data || 'Failed to fetch projects')
+    }
+  }
+)
+
 const entriesSlice = createSlice({
   name: 'entries',
   initialState,
@@ -154,6 +189,28 @@ const entriesSlice = createSlice({
         if (state.selectedEntry?.id === action.payload) {
           state.selectedEntry = null
         }
+      })
+      // Override Entry
+      .addCase(overrideEntry.pending, (state) => {
+        state.isLoading = true
+      })
+      .addCase(overrideEntry.fulfilled, (state, action) => {
+        const index = state.entries.findIndex((e) => e.id === action.payload.id)
+        if (index !== -1) {
+          state.entries[index] = action.payload
+        }
+        if (state.selectedEntry?.id === action.payload.id) {
+          state.selectedEntry = action.payload
+        }
+        state.isLoading = false
+      })
+      .addCase(overrideEntry.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+      // Fetch User Projects
+      .addCase(fetchUserProjects.fulfilled, (state, action) => {
+        state.userProjects = action.payload
       })
   },
 })

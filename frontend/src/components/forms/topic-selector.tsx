@@ -95,7 +95,7 @@ export function TopicSelector({ value, onChange, disabled }: TopicSelectorProps)
         >
           {selectedTopic ? selectedTopic.name : 'Select a topic...'}
           {selectedTopic && searchQuery && (
-            <span className="ml-2 text-[10px] text-muted-foreground truncate opacity-70">
+            <span className="ml-2 text-xs text-muted-foreground truncate opacity-70">
               in {getTopicPath(selectedTopic)}
             </span>
           )}
@@ -172,7 +172,7 @@ export function TopicSelector({ value, onChange, disabled }: TopicSelectorProps)
                         {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
                       </div>
                       {topic.path && (
-                        <span className="text-[10px] text-muted-foreground truncate opacity-70">
+                        <span className="text-xs text-muted-foreground truncate opacity-70">
                           {topic.path}
                         </span>
                       )}

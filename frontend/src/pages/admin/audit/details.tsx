@@ -129,7 +129,7 @@ export default function AuditLogDetailsPage() {
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs font-medium text-muted-foreground">Status</p>
-                                <Badge variant={log.status === 'SUCCESS' ? 'default' : 'destructive'} className="text-[10px]">
+                                <Badge variant={log.status === 'SUCCESS' ? 'default' : 'destructive'} className="text-xs">
                                     {log.status}
                                 </Badge>
                             </div>

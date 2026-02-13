@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useAppDispatch } from '@/lib/store/hooks'
+import { overrideEntry } from '@/lib/store/slices/entriesSlice'
 import {
     Dialog,
     DialogContent,
@@ -23,6 +25,7 @@ interface OverrideModalProps {
 }
 
 export function OverrideModal({ entry, open, onClose }: OverrideModalProps) {
+    const dispatch = useAppDispatch()
     const [reason, setReason] = useState<string>('')
     const [comment, setComment] = useState('')
     const [newStatus, setNewStatus] = useState<EntryStatus>('approved')
@@ -34,16 +37,25 @@ export function OverrideModal({ entry, open, onClose }: OverrideModalProps) {
         e.preventDefault()
         setIsSubmitting(true)
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 800))
+        try {
+            await dispatch(overrideEntry({
+                entryId: entry.id,
+                status: newStatus,
+                reason,
+                comment
+            })).unwrap()
 
-        console.log('Override submitted:', { entryId: entry.id, reason, comment, newStatus })
-
-        setIsSubmitting(false)
-        setReason('')
-        setComment('')
-        setNewStatus('approved')
-        onClose()
+            // Success - reset form and close
+            setReason('')
+            setComment('')
+            setNewStatus('approved')
+            onClose()
+        } catch (error) {
+            console.error('Override failed:', error)
+            alert(error instanceof Error ? error.message : 'Failed to override entry')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const requiresComment = reason === 'Other (see comment)'

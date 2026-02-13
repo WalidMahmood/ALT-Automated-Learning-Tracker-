@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { setEntryModalOpen } from '@/lib/store/slices/uiSlice'
-import { createEntry, updateEntryThunk, selectEntry, deleteEntryThunk } from '@/lib/store/slices/entriesSlice'
+import { createEntry, updateEntryThunk, selectEntry, deleteEntryThunk, fetchUserProjects } from '@/lib/store/slices/entriesSlice'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,9 +41,14 @@ import {
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
-import type { EntryFormData } from '@/lib/types'
+import type { EntryFormData, EntryIntent } from '@/lib/types'
 
 const BLOCKER_OPTIONS = ['Technical', 'Environmental', 'Personal', 'Resource', 'Other'] as const
+
+const INTENT_OPTIONS: { value: EntryIntent; label: string; description: string; icon: string }[] = [
+  { value: 'lnd_tasks', label: 'L&D Tasks', description: 'Learning & development activities', icon: '📚' },
+  { value: 'sbu_tasks', label: 'SBU Tasks', description: 'Hands-on building & implementing', icon: '🛠️' },
+]
 
 
 export function EntryFormModal() {
@@ -53,10 +58,11 @@ export function EntryFormModal() {
   const { user } = useAppSelector((state) => state.auth)
   const { requests: leaveRequests } = useAppSelector((state) => state.leaveRequests)
   const { topics } = useAppSelector((state) => state.topics)
-  const { entries } = useAppSelector((state) => state.entries)
+  const { entries, userProjects } = useAppSelector((state) => state.entries)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [viewState, setViewState] = useState<'list' | 'form'>('list')
+  const [projectMode, setProjectMode] = useState<'select' | 'new'>('select')
 
   const dayEntries = entries.filter(
     (e) => e.date === selectedDate && e.user === user?.id
@@ -73,7 +79,10 @@ export function EntryFormModal() {
 
   const [formData, setFormData] = useState<EntryFormData>({
     date: selectedDate,
+    intent: 'lnd_tasks',
     topic_id: null,
+    project_name: '',
+    project_description: '',
     hours: '',
     learned_text: '',
     progress_percent: 0,
@@ -84,6 +93,22 @@ export function EntryFormModal() {
   const [blockerType, setBlockerType] = useState<string>('')
   const [isEditing, setIsEditing] = useState(false)
   const prevOpen = useRef(false)
+
+  // Fetch user projects when intent becomes project-based
+  const isProjectBased = formData.intent === 'sbu_tasks'
+  useEffect(() => {
+    if (isProjectBased && entryModalOpen) {
+      dispatch(fetchUserProjects())
+    }
+  }, [isProjectBased, entryModalOpen, dispatch])
+
+  // Auto-set project mode based on whether user has existing projects
+  const activeProjects = userProjects.filter(p => !p.is_completed)
+  useEffect(() => {
+    if (isProjectBased && !selectedEntry) {
+      setProjectMode(activeProjects.length > 0 ? 'select' : 'new')
+    }
+  }, [isProjectBased, activeProjects.length, selectedEntry])
 
   // Initialize view state ONLY when modal first opens
   useEffect(() => {
@@ -111,7 +136,10 @@ export function EntryFormModal() {
 
       setFormData({
         date: selectedEntry.date,
+        intent: selectedEntry.intent || 'lnd_tasks',
         topic_id: selectedEntry.topic,
+        project_name: selectedEntry.project_name || '',
+        project_description: selectedEntry.project_description || '',
         hours: hoursStr,
         learned_text: selectedEntry.learned_text,
         progress_percent: selectedEntry.progress_percent,
@@ -128,7 +156,10 @@ export function EntryFormModal() {
     } else {
       setFormData({
         date: selectedDate,
+        intent: 'lnd_tasks',
         topic_id: null,
+        project_name: '',
+        project_description: '',
         hours: '',
         learned_text: '',
         progress_percent: 0,
@@ -158,7 +189,25 @@ export function EntryFormModal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.topic_id || !user) return
+
+    const isTopicBased = formData.intent === 'lnd_tasks'
+    const isProjectBased = formData.intent === 'sbu_tasks'
+
+    // Validate based on intent
+    if (isTopicBased && !formData.topic_id) {
+      setSubmitError('Please select a learning topic.')
+      return
+    }
+    if (isProjectBased && !formData.project_name.trim()) {
+      setSubmitError('Please enter a project name.')
+      return
+    }
+    // New projects require a description
+    if (isProjectBased && projectMode === 'new' && !selectedEntry && !formData.project_description.trim()) {
+      setSubmitError('Project description is required for new projects. This helps AI validate your entries.')
+      return
+    }
+    if (!user) return
 
     // Validate learned_text length
     if (formData.learned_text.length < 50) {
@@ -177,14 +226,23 @@ export function EntryFormModal() {
       return
     }
 
-    // Proactive Duplicate Check
-    const isDuplicate = dayEntries.some(
-      (e) => e.topic === formData.topic_id && (!selectedEntry || e.id !== selectedEntry.id)
-    )
-
-    if (isDuplicate) {
-      setSubmitError("Topic already entered. Your performance won't be increased by inputting the same topic twice.")
-      return
+    // Proactive Duplicate Check (topic-based or project-based)
+    if (isTopicBased) {
+      const isDuplicate = dayEntries.some(
+        (e) => e.topic === formData.topic_id && (!selectedEntry || e.id !== selectedEntry.id)
+      )
+      if (isDuplicate) {
+        setSubmitError("Topic already entered. Your performance won't be increased by inputting the same topic twice.")
+        return
+      }
+    } else {
+      const isDuplicate = dayEntries.some(
+        (e) => e.project_name === (formData.project_name || '').trim() && (!selectedEntry || e.id !== selectedEntry.id)
+      )
+      if (isDuplicate) {
+        setSubmitError("Project already entered for today.")
+        return
+      }
     }
 
     setSubmitError(null)
@@ -192,14 +250,28 @@ export function EntryFormModal() {
 
     const payload: any = {
       date: formData.date,
-      topic: formData.topic_id,
+      intent: formData.intent,
       hours: parseHours(formData.hours),
       learned_text: formData.learned_text,
-      progress_percent: formData.is_completed ? 100 : 0,
       is_completed: formData.is_completed,
       blockers_text: blockerType
         ? `${blockerType}: ${formData.blockers_text || ''}`
         : formData.blockers_text || null,
+    }
+
+    if (isTopicBased) {
+      payload.topic = formData.topic_id
+      payload.project_name = null
+      payload.project_description = null
+    } else {
+      payload.topic = null
+      payload.project_name = formData.project_name.trim()
+      payload.project_description = formData.project_description.trim() || null
+    }
+
+    // Only send progress_percent when explicitly marking complete
+    if (formData.is_completed) {
+      payload.progress_percent = 100
     }
 
     try {
@@ -211,8 +283,24 @@ export function EntryFormModal() {
       handleClose()
     } catch (err: any) {
       // Extract specific field errors if available
-      const errorMessage = err?.topic || err?.non_field_errors?.[0] ||
-        (typeof err === 'string' ? err : 'Operation failed. Please check inputs.')
+      // DRF returns errors as {field: ["error msg"]} or {non_field_errors: ["msg"]}
+      let errorMessage = 'Operation failed. Please check inputs.'
+      if (typeof err === 'string') {
+        errorMessage = err
+      } else if (err && typeof err === 'object') {
+        // Collect all field error messages
+        const messages: string[] = []
+        for (const [_, val] of Object.entries(err)) {
+          if (Array.isArray(val)) {
+            messages.push(...val.map(String))
+          } else if (typeof val === 'string') {
+            messages.push(val)
+          }
+        }
+        if (messages.length > 0) {
+          errorMessage = messages.join(' ')
+        }
+      }
       setSubmitError(errorMessage)
     } finally {
       setIsSubmitting(false)
@@ -300,6 +388,8 @@ export function EntryFormModal() {
             <div className="space-y-3">
               {dayEntries.map((entry) => {
                 const topic = topics.find(t => t.id === entry.topic)
+                const displayName = topic?.name || entry.project_name || 'Unknown'
+                const intentLabel = INTENT_OPTIONS.find(o => o.value === entry.intent)
                 return (
                   <div
                     key={entry.id}
@@ -310,9 +400,12 @@ export function EntryFormModal() {
                     }}
                   >
                     <div className="space-y-1">
-                      <span className="font-medium">{topic?.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{intentLabel?.icon}</span>
+                        <span className="font-medium">{displayName}</span>
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Badge variant="secondary" className="text-xs">{entry.status}</Badge>
+                        <Badge variant="secondary" className="text-xs">{entry.status === 'pending' ? 'analyzing' : entry.status}</Badge>
                         <span>{entry.hours} hours</span>
                       </div>
                     </div>
@@ -373,8 +466,12 @@ export function EntryFormModal() {
                     Confidence: {selectedEntry.ai_confidence}%
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEntry.ai_reasoning}
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap break-all overflow-hidden">
+                  {selectedEntry.ai_chain_of_thought?.final_decision?.reason ||
+                    selectedEntry.ai_chain_of_thought?.final_reasoning ||
+                    (typeof selectedEntry.ai_chain_of_thought === 'string'
+                      ? selectedEntry.ai_chain_of_thought
+                      : 'AI analysis logs are available in the Admin details view.')}
                 </p>
               </div>
             )}
@@ -397,7 +494,7 @@ export function EntryFormModal() {
                     selectedEntry?.status === 'approved' && 'bg-success text-success-foreground'
                   )}
                 >
-                  {selectedEntry?.status?.toUpperCase()}
+                  {(selectedEntry?.status === 'pending' ? 'ANALYZING' : selectedEntry?.status?.toUpperCase())}
                 </Badge>
                 {selectedEntry?.admin_override && (
                   <Badge variant="outline">Admin Override</Badge>
@@ -406,158 +503,360 @@ export function EntryFormModal() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Topic Selection */}
+              {/* Intent Selector */}
               <div className="space-y-2">
-                <Label>Learning Topic *</Label>
+                <Label>Activity Type *</Label>
                 {isViewOnly ? (
                   <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
-                    <span>{selectedTopic?.name}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      Benchmark: ~{selectedTopicBenchmark.toFixed(1)}h
-                    </span>
+                    <span>{INTENT_OPTIONS.find(o => o.value === formData.intent)?.icon}</span>
+                    <span className="font-medium">{INTENT_OPTIONS.find(o => o.value === formData.intent)?.label}</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
-                    <TopicPicker
-                      allTopics={topics}
-                      onSelect={(id) => {
-                        const t = topics.find(x => x.id === id);
-                        setFormData({
-                          ...formData,
-                          topic_id: id,
-                          progress_percent: t?.mastery?.progress || 0
-                        })
-                      }}
-                      placeholder={selectedTopic ? selectedTopic.name : "Select Learning Topic..."}
-                    />
-                    {selectedTopic && (
-                      <div className="flex flex-col gap-2 p-3 bg-primary/5 rounded-md border border-primary/10">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-primary">Selected: {selectedTopic.name}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            Benchmark: ~{selectedTopicBenchmark.toFixed(1)}h
-                          </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {INTENT_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, intent: option.value, topic_id: null, project_name: '', project_description: '' })}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border-2 p-3 text-left transition-all hover:bg-accent/10",
+                          formData.intent === option.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border"
+                        )}
+                      >
+                        <span className="text-lg">{option.icon}</span>
+                        <div>
+                          <div className="text-sm font-medium">{option.label}</div>
+                          <div className="text-xs text-muted-foreground">{option.description}</div>
                         </div>
-                        {selectedTopic.mastery?.is_locked && (
-                          <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
-                            <Lock className="h-3 w-3" />
-                            <span>
-                              {selectedEntry?.is_completed
-                                ? "Mastered: This entry marked this area as completed."
-                                : `Mastered: Further logging is locked ${selectedTopic.mastery.lock_reason ? `by ${selectedTopic.mastery.lock_reason}` : 'for this area'}.`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Topic Selection (for lnd_tasks) */}
+              {formData.intent === 'lnd_tasks' && (
+                <div className="space-y-2">
+                  <Label>Learning Topic *</Label>
+                  {isViewOnly ? (
+                    <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                      <span>{selectedTopic?.name}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        Benchmark: ~{selectedTopicBenchmark.toFixed(1)}h
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <TopicPicker
+                        allTopics={topics}
+                        onSelect={(id) => {
+                          const t = topics.find(x => x.id === id);
+                          setFormData({
+                            ...formData,
+                            topic_id: id,
+                            progress_percent: t?.mastery?.progress || 0
+                          })
+                        }}
+                        placeholder={selectedTopic ? selectedTopic.name : "Select Learning Topic..."}
+                      />
+                      {selectedTopic && (
+                        <div className="flex flex-col gap-2 p-3 bg-primary/5 rounded-md border border-primary/10">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-primary">Selected: {selectedTopic.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              Benchmark: ~{selectedTopicBenchmark.toFixed(1)}h
                             </span>
                           </div>
-                        )}
-                        {submitError && (
-                          <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
-                            <AlertCircle className="h-3 w-3 shrink-0" />
-                            <span>{submitError}</span>
+                          {selectedTopic.mastery?.is_locked && (
+                            <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
+                              <Lock className="h-3 w-3" />
+                              <span>
+                                {selectedEntry?.is_completed
+                                  ? "Mastered: This entry marked this area as completed."
+                                  : `Mastered: Further logging is locked ${selectedTopic.mastery.lock_reason ? `by ${selectedTopic.mastery.lock_reason}` : 'for this area'}.`}
+                              </span>
+                            </div>
+                          )}
+                          {submitError && (
+                            <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
+                              <AlertCircle className="h-3 w-3 shrink-0" />
+                              <span>{submitError}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Project Fields (for sbu_tasks) */}
+              {formData.intent === 'sbu_tasks' && (
+                <div className="space-y-4">
+                  {/* Project selection: existing projects or new */}
+                  {!isViewOnly && !selectedEntry && activeProjects.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold">Continue Existing or Start New?</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={projectMode === 'select' ? 'default' : 'outline'}
+                          className="flex-1 text-xs"
+                          onClick={() => {
+                            setProjectMode('select')
+                            setFormData(f => ({ ...f, project_name: '', project_description: '' }))
+                          }}
+                        >
+                          📂 Continue Project ({activeProjects.length})
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={projectMode === 'new' ? 'default' : 'outline'}
+                          className="flex-1 text-xs"
+                          onClick={() => {
+                            setProjectMode('new')
+                            setFormData(f => ({ ...f, project_name: '', project_description: '' }))
+                          }}
+                        >
+                          <Plus className="w-3 h-3 mr-1" /> New Project
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Existing project picker */}
+                  {!isViewOnly && !selectedEntry && projectMode === 'select' && activeProjects.length > 0 ? (
+                    <div className="space-y-2">
+                      <Label>Select Project *</Label>
+                      <div className="space-y-1.5 max-h-[200px] overflow-y-auto rounded-lg border p-2">
+                        {activeProjects.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setFormData(f => ({
+                              ...f,
+                              project_name: p.name,
+                              project_description: p.description || '',
+                            }))}
+                            className={cn(
+                              "w-full text-left p-2.5 rounded-md border transition-all overflow-hidden",
+                              formData.project_name === p.name
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                                : "border-border hover:border-primary/40 hover:bg-muted/30"
+                            )}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{p.name}</span>
+                              <Badge variant="outline" className="text-xs">{p.entry_count} entries</Badge>
+                            </div>
+                            {p.description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-all break-words">{p.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground/60 mt-0.5">Last: {p.latest_date}</p>
+                          </button>
+                        ))}
+                      </div>
+                      {formData.project_name && (
+                        <div className="p-2 rounded-md bg-muted/30 border">
+                          <p className="text-xs text-muted-foreground">Selected: <span className="font-semibold text-foreground">{formData.project_name}</span></p>
+                          {formData.project_description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 italic break-all line-clamp-2">"{formData.project_description}"</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {/* New project / editing / view-only */}
+                      <div className="space-y-2">
+                        <Label>Project Name *</Label>
+                        {isViewOnly ? (
+                          <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm break-all">
+                            {formData.project_name}
                           </div>
+                        ) : (
+                          <Input
+                            type="text"
+                            placeholder="e.g., E-commerce Platform, Portfolio Website..."
+                            value={formData.project_name}
+                            onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
+                            maxLength={200}
+                            required
+                          />
                         )}
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      <div className="space-y-2">
+                        <Label>
+                          Project Description {projectMode === 'new' && !selectedEntry ? (
+                            <span className="text-destructive text-xs">* (required for new projects)</span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">(optional)</span>
+                          )}
+                        </Label>
+                        {isViewOnly ? (
+                          formData.project_description ? (
+                            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm break-all">
+                              {formData.project_description}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No description provided</p>
+                          )
+                        ) : (
+                          <Textarea
+                            placeholder="Describe the project so the AI can validate your entries against it. What are you building? What tech stack? What are the goals?"
+                            value={formData.project_description}
+                            onChange={(e) => setFormData({ ...formData, project_description: e.target.value })}
+                            className={cn("min-h-[80px] resize-y", projectMode === 'new' && !selectedEntry && !formData.project_description.trim() && "border-destructive/50")}
+                            maxLength={500}
+                            required={projectMode === 'new' && !selectedEntry}
+                          />
+                        )}
+                        {projectMode === 'new' && !selectedEntry && (
+                          <p className="text-xs text-muted-foreground">This description helps the AI understand your project context and validate future entries.</p>
+                        )}
+                      </div>
+                    </>
+                  )}
 
-              {/* Progress Bar (Automated Calculation) */}
-              <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/10">
-                <div className="flex items-center justify-between">
-                  {(() => {
-                    const parentTopic = selectedTopic?.parent_id ? topics.find(t => t.id === selectedTopic.parent_id) : null
-
-                    // Calculate optimistic progress
-                    let displayProgress = selectedTopic?.mastery?.progress || 0
-                    let displayLabel = "Conceptual Progress"
-
-                    if (parentTopic && selectedTopic) {
-                      const siblings = topics.filter(t => t.parent_id === parentTopic.id && t.is_active)
-                      const siblingCount = siblings.length
-
-                      if (siblingCount > 0) {
-                        const otherSiblingsProgress = siblings
-                          .filter(s => s.id !== selectedTopic.id)
-                          .reduce((sum, s) => sum + (s.mastery?.progress || 0), 0)
-
-                        const currentTopicProgress = formData.is_completed ? 100 : 0
-                        displayProgress = (otherSiblingsProgress + currentTopicProgress) / siblingCount
-                        displayLabel = parentTopic.name
-                      }
-                    } else if (selectedTopic) {
-                      displayProgress = formData.is_completed ? 100 : 0
-                      displayLabel = selectedTopic.name
-                    }
-
-                    return (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4 text-primary" />
-                          <Label className="font-semibold">Conceptual Progress</Label>
-                        </div>
-                        <Badge variant="secondary" className="font-mono">
-                          {displayLabel}: {Math.round(displayProgress)}%
-                        </Badge>
-                      </>
-                    )
-                  })()}
-                </div>
-
-                <div className="space-y-4">
-                  {(() => {
-                    const parentTopic = selectedTopic?.parent_id ? topics.find(t => t.id === selectedTopic.parent_id) : null
-                    let displayProgress = selectedTopic?.mastery?.progress || 0
-
-                    if (parentTopic && selectedTopic) {
-                      const siblings = topics.filter(t => t.parent_id === parentTopic.id && t.is_active)
-                      const siblingCount = siblings.length
-                      if (siblingCount > 0) {
-                        const otherSiblingsProgress = siblings
-                          .filter(s => s.id !== selectedTopic.id)
-                          .reduce((sum, s) => sum + (s.mastery?.progress || 0), 0)
-                        const currentTopicProgress = formData.is_completed ? 100 : 0
-                        displayProgress = (otherSiblingsProgress + currentTopicProgress) / siblingCount
-                      }
-                    } else if (selectedTopic) {
-                      displayProgress = formData.is_completed ? 100 : 0
-                    }
-                    return <Progress value={displayProgress} className="h-2" />
-                  })()}
-                </div>
-
-                {!isViewOnly && (
-                  <div className="flex items-start space-x-3 rounded-md border border-border bg-background p-3 shadow-sm transition-all hover:bg-accent/5">
-                    <Checkbox
-                      id="is_completed"
-                      checked={formData.is_completed}
-                      onCheckedChange={(checked) => setFormData({
-                        ...formData,
-                        is_completed: !!checked
-                      })}
-                      // Allow toggling completion if we are editing an existing entry
-                      disabled={selectedTopic?.mastery?.is_locked && !selectedEntry}
-                      className="mt-1"
-                    />
-                    <div className="grid gap-1.5 leading-none">
-                      <label
-                        htmlFor="is_completed"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        Mark as Completed
-                      </label>
-                      <p className="text-xs text-muted-foreground">
-                        Toggle if you have finished all sub-tasks and requirements for this area.
-                      </p>
+                  {submitError && (
+                    <div className="flex items-center gap-2 p-2 bg-destructive/10 text-destructive rounded border border-destructive/20 text-xs animate-in fade-in slide-in-from-top-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      <span>{submitError}</span>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {isViewOnly && formData.is_completed && (
-                  <div className="flex items-center gap-2 text-xs font-medium text-success bg-success/10 p-2 rounded border border-success/20">
-                    <Check className="h-3 w-3" />
-                    Topic marked as completed in this log.
+              {/* Progress Bar (Topic-based entries only) */}
+              {formData.intent === 'lnd_tasks' && selectedTopic && (
+                <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/10">
+                  <div className="flex items-center justify-between">
+                    {(() => {
+                      const parentTopic = selectedTopic?.parent_id ? topics.find(t => t.id === selectedTopic.parent_id) : null
+
+                      // Calculate optimistic progress
+                      let displayProgress = selectedTopic?.mastery?.progress || 0
+                      let displayLabel = "Conceptual Progress"
+
+                      if (parentTopic && selectedTopic) {
+                        const siblings = topics.filter(t => t.parent_id === parentTopic.id && t.is_active)
+                        const siblingCount = siblings.length
+
+                        if (siblingCount > 0) {
+                          const otherSiblingsProgress = siblings
+                            .filter(s => s.id !== selectedTopic.id)
+                            .reduce((sum, s) => sum + (s.mastery?.progress || 0), 0)
+
+                          const currentTopicProgress = formData.is_completed ? 100 : 0
+                          displayProgress = (otherSiblingsProgress + currentTopicProgress) / siblingCount
+                          displayLabel = parentTopic.name
+                        }
+                      } else if (selectedTopic) {
+                        displayProgress = formData.is_completed ? 100 : 0
+                        displayLabel = selectedTopic.name
+                      }
+
+                      return (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Target className="h-4 w-4 text-primary" />
+                            <Label className="font-semibold">Conceptual Progress</Label>
+                          </div>
+                          <Badge variant="secondary" className="font-mono">
+                            {displayLabel}: {Math.round(displayProgress)}%
+                          </Badge>
+                        </>
+                      )
+                    })()}
                   </div>
-                )}
-              </div>
+
+                  <div className="space-y-4">
+                    {(() => {
+                      const parentTopic = selectedTopic?.parent_id ? topics.find(t => t.id === selectedTopic.parent_id) : null
+                      let displayProgress = selectedTopic?.mastery?.progress || 0
+
+                      if (parentTopic && selectedTopic) {
+                        const siblings = topics.filter(t => t.parent_id === parentTopic.id && t.is_active)
+                        const siblingCount = siblings.length
+                        if (siblingCount > 0) {
+                          const otherSiblingsProgress = siblings
+                            .filter(s => s.id !== selectedTopic.id)
+                            .reduce((sum, s) => sum + (s.mastery?.progress || 0), 0)
+                          const currentTopicProgress = formData.is_completed ? 100 : 0
+                          displayProgress = (otherSiblingsProgress + currentTopicProgress) / siblingCount
+                        }
+                      } else if (selectedTopic) {
+                        displayProgress = formData.is_completed ? 100 : 0
+                      }
+                      return <Progress value={displayProgress} className="h-2" />
+                    })()}
+                  </div>
+
+                  {!isViewOnly && (
+                    <div className="flex items-start space-x-3 rounded-md border border-border bg-background p-3 shadow-sm transition-all hover:bg-accent/5">
+                      <Checkbox
+                        id="is_completed"
+                        checked={formData.is_completed}
+                        onCheckedChange={(checked) => setFormData({
+                          ...formData,
+                          is_completed: !!checked
+                        })}
+                        // Allow toggling completion if we are editing an existing entry
+                        disabled={selectedTopic?.mastery?.is_locked && !selectedEntry}
+                        className="mt-1"
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <label
+                          htmlFor="is_completed"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Mark as Completed
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Toggle if you have finished all sub-tasks and requirements for this area.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {isViewOnly && formData.is_completed && (
+                    <div className="flex items-center gap-2 text-xs font-medium text-success bg-success/10 p-2 rounded border border-success/20">
+                      <Check className="h-3 w-3" />
+                      Topic marked as completed in this log.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mark Complete for project-based entries */}
+              {formData.intent === 'sbu_tasks' && !isViewOnly && (
+                <div className="flex items-start space-x-3 rounded-md border border-border bg-background p-3 shadow-sm transition-all hover:bg-accent/5">
+                  <Checkbox
+                    id="is_completed_project"
+                    checked={formData.is_completed}
+                    onCheckedChange={(checked) => setFormData({
+                      ...formData,
+                      is_completed: !!checked
+                    })}
+                    className="mt-1"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="is_completed_project"
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      Mark Project as Completed
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle if this project milestone / task is finished.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Time Spent */}
               <div className="space-y-2">
@@ -674,7 +973,8 @@ export function EntryFormModal() {
                   onClick={handleSubmit}
                   disabled={
                     isSubmitting ||
-                    !formData.topic_id ||
+                    (formData.intent === 'lnd_tasks' && !formData.topic_id) ||
+                    (formData.intent === 'sbu_tasks' && !(formData.project_name || '').trim()) ||
                     isLeaveDay ||
                     (selectedTopic?.mastery?.is_locked && !selectedEntry)
                   }

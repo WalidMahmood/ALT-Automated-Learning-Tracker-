@@ -364,7 +364,7 @@ function TrainingPlanContent() {
                                   {topic?.name}
                                 </span>
                                 {hasPlanChildren && (
-                                  <Badge variant="outline" className="text-[10px] h-4 py-0 px-1 font-normal opacity-70">Category</Badge>
+                                  <Badge variant="outline" className="text-xs h-4 py-0 px-1 font-normal opacity-70">Category</Badge>
                                 )}
                                 {isCurrent && !hasPlanChildren && (
                                   <Badge className="bg-primary/10 text-primary h-5">
@@ -372,7 +372,7 @@ function TrainingPlanContent() {
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-[11px] text-muted-foreground">
+                              <p className="text-xs text-muted-foreground">
                                 {hoursLogged.toFixed(1)}h / {displayExpectedHours.toFixed(1)}h
                                 {hasPlanChildren && <span className="ml-1 opacity-60">(Aggregated)</span>}
                               </p>
@@ -414,10 +414,10 @@ function TrainingPlanContent() {
                             {/* Recent Entries */}
                             {topicEntries.length > 0 && (
                               <div className="pt-3 border-t">
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recent Activities</p>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recent Activities</p>
                                 <div className="space-y-1.5">
                                   {topicEntries.map((entry) => (
-                                    <div key={entry.id} className="flex items-center justify-between text-[11px] py-1 px-3 bg-muted/40 rounded border border-border/30">
+                                    <div key={entry.id} className="flex items-center justify-between text-xs py-1 px-3 bg-muted/40 rounded border border-border/30">
                                       <div className="flex items-center gap-2">
                                         <CalendarIcon className="h-3 w-3 text-muted-foreground" />
                                         <span className="text-muted-foreground">{entry.date}</span>
@@ -435,7 +435,7 @@ function TrainingPlanContent() {
                             )}
 
                             <div>
-                              <p className="text-muted-foreground text-[11px] mb-2 uppercase tracking-wide">
+                              <p className="text-muted-foreground text-xs mb-2 uppercase tracking-wide">
                                 Topic Status
                               </p>
                               <div className="flex items-center justify-between bg-muted/20 p-2 rounded-md">

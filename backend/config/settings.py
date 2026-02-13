@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'apps.entries.apps.EntriesConfig',
     'apps.leaves.apps.LeavesConfig',
     'apps.audit',
+    'django_celery_results',
 
 ]
 
@@ -235,10 +236,19 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Celery Configuration (for future AI integration)
+# Celery Configuration (AI Brain Pipeline v6.0)
 CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# Celery Task Timeouts (v6.0: 4 LLM calls × 15s each + overhead)
+CELERY_TASK_SOFT_TIME_LIMIT = 60   # Warning at 60s (raises SoftTimeLimitExceeded → entry flagged)
+CELERY_TASK_TIME_LIMIT = 90        # Hard kill at 90s (safety net)
+
+# Worker Stability - Keep it simple for solo pool
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1     # Only fetch 1 task at a time
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 100   # Restart after 100 tasks to prevent memory leaks

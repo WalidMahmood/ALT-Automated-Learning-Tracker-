@@ -471,7 +471,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                             <div className="flex items-center justify-between border-b pb-1.5 px-0.5">
                                 <div className="flex items-center gap-3">
                                     <Label className="text-sm font-semibold">Topics</Label>
-                                    <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5 font-medium bg-muted/50">
+                                    <Badge variant="secondary" className="text-xs h-4.5 px-1.5 font-medium bg-muted/50">
                                         {totalHours.toFixed(1)}h total
                                     </Badge>
                                 </div>
@@ -479,7 +479,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-[11px] h-7 px-2 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                                        className="text-xs h-7 px-2 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
                                         onClick={() => window.open('/admin/topics', '_blank')}
                                     >
                                         <Plus className="mr-1 h-3 w-3" />
@@ -549,7 +549,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                                                             )}
                                                             style={{ marginLeft: `${level * 24}px` }}
                                                         >
-                                                            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold shrink-0">
+                                                            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
                                                                 {level === 0 ? index + 1 : '•'}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
@@ -558,7 +558,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                                                                         {topicName}
                                                                     </p>
                                                                     {hasPlanChildren && (
-                                                                        <Badge variant="outline" className="text-[9px] h-4 py-0 px-1 font-normal opacity-70">Category</Badge>
+                                                                        <Badge variant="outline" className="text-xs h-4 py-0 px-1 font-normal opacity-70">Category</Badge>
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -576,7 +576,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                                                                             }
                                                                         </span>
                                                                         {hasPlanChildren && (
-                                                                            <span className="text-[10px] ml-0.5 opacity-60">*</span>
+                                                                            <span className="text-xs ml-0.5 opacity-60">*</span>
                                                                         )}
                                                                     </div>
                                                                 ) : (
@@ -589,7 +589,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                                                                         min="0"
                                                                     />
                                                                 )}
-                                                                <span className="text-[10px] text-muted-foreground w-3">h</span>
+                                                                <span className="text-xs text-muted-foreground w-3">h</span>
                                                             </div>
                                                             {!isView && (
                                                                 <Button
@@ -619,7 +619,7 @@ function PlanDialog({ open, onOpenChange, plan, mode, setMode, onSave, handleDel
                                     const tid = pt.topic_id || pt.topic?.id || 0
                                     return topics.some(t => t.id === tid && topics.some(other => other.parent_id === t.id && formData.plan_topics?.some(p => (p.topic_id || p.topic?.id) === other.id)))
                                 }) && (
-                                        <p className="text-[10px] text-muted-foreground italic px-2 pt-1 border-t mt-2">
+                                        <p className="text-xs text-muted-foreground italic px-2 pt-1 border-t mt-2">
                                             * Calculated total including all nested sub-topics below.
                                         </p>
                                     )}

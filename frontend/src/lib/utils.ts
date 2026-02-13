@@ -11,3 +11,13 @@ export function formatDateToISO(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+
+/**
+ * Returns user-friendly display label for entry status.
+ * "pending" → "analyzing" for learner-facing views.
+ * Admins see raw status. Use isAdmin=true to keep "pending" as-is.
+ */
+export function getDisplayStatus(status: string, isAdmin = false): string {
+  if (!isAdmin && status === 'pending') return 'analyzing'
+  return status
+}

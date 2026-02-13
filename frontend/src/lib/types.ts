@@ -38,7 +38,74 @@ export interface Topic {
 
 // Entry Status Types
 export type EntryStatus = 'pending' | 'approved' | 'rejected' | 'flagged'
-export type AIDecision = 'approve' | 'flag' | 'reject' | 'clarify'
+export type AIDecision = 'approve' | 'flag' | 'pending' | 'reject' | 'clarify'
+export type EntryIntent = 'lnd_tasks' | 'sbu_tasks'
+
+// v4.0 Structured Chain-of-Thought per node
+export interface NodeResult {
+  summary: string
+  score: number | null
+  path: 'logic' | 'ai' | 'breaker' | 'skipped'
+  path_reason?: string
+  details: string | Record<string, any>
+  llm_raw_response?: string | null
+}
+
+export interface FinalDecisionResult extends NodeResult {
+  confidence: number
+  decision: string
+  reason: string
+  scores: { time: number; quality: number; relevance: number }
+  weights: { time: number; quality: number; relevance: number } | null
+  blocker_boost: number
+  penalty: string
+  node_verdicts?: { time: string; content: string; progress: string }
+}
+
+export interface ChainOfThought {
+  context_analysis?: NodeResult
+  time_analysis?: NodeResult
+  content_analysis?: NodeResult
+  progress_analysis?: NodeResult
+  final_decision?: FinalDecisionResult
+  // Legacy fallback
+  [key: string]: any
+}
+
+// Project Types
+export interface Project {
+  id: number
+  user: number
+  user_email?: string
+  name: string
+  description: string
+  is_completed: boolean
+  is_active: boolean
+  entry_count: number
+  latest_date: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ProjectDetail extends Project {
+  entries: ProjectEntry[]
+}
+
+export interface ProjectEntry {
+  id: number
+  date: string
+  hours: number
+  learned_text: string
+  blockers_text: string | null
+  progress_percent: number
+  is_completed: boolean
+  intent: EntryIntent
+  status: EntryStatus
+  ai_status: string
+  ai_decision: AIDecision | null
+  ai_confidence: number | null
+  created_at: string
+}
 
 // Entry Types
 export interface Entry {
@@ -46,18 +113,23 @@ export interface Entry {
   user: number
   user_email?: string
   date: string
-  topic: number
+  topic: number | null
   topic_details?: Topic
+  intent: EntryIntent
+  project: number | null
+  project_details?: Project
+  project_name: string | null
+  project_description: string | null
   hours: number
   learned_text: string
   progress_percent: number
   is_completed: boolean
   blockers_text: string | null
   // AI Analysis Fields
-  ai_status: 'pending' | 'analyzed' | 'error'
+  ai_status: 'pending' | 'analyzed' | 'error' | 'timeout'
   ai_decision: AIDecision | null
   ai_confidence: number | null // 0-100
-  ai_reasoning: string | null
+  ai_chain_of_thought: ChainOfThought | null
   ai_analyzed_at: string | null
   // Status & Override
   status: EntryStatus
@@ -67,6 +139,7 @@ export interface Entry {
   override_at: string | null
   admin_id: number | null
   admin?: User
+  extra_learning?: any[]
   created_at: string
   updated_at: string
 }
@@ -149,7 +222,10 @@ export interface AuditLog {
 // Form Types
 export interface EntryFormData {
   date: string
+  intent: EntryIntent
   topic_id: number | null
+  project_name: string
+  project_description: string
   hours: string // HH:MM format
   learned_text: string
   progress_percent: number

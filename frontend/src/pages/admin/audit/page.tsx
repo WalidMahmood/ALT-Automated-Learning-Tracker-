@@ -202,7 +202,7 @@ export default function AuditLogsPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="outline" className={cn("text-[10px] font-mono", getActionColor(log.action))}>
+                                                <Badge variant="outline" className={cn("text-xs font-mono", getActionColor(log.action))}>
                                                     {log.action}
                                                 </Badge>
                                             </TableCell>
