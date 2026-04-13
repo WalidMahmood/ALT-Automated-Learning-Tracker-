@@ -1,0 +1,849 @@
+{
+  "id": "devops",
+  "name": "Devops",
+  "description": "Detailed roadmap for devops.",
+  "category": "role",
+  "estimatedHours": 1170,
+  "sections": [
+    {
+      "id": "intro",
+      "name": "Introduction",
+      "topics": [
+        {
+          "name": "Ruby",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Rust",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "learn-a-programming-language",
+      "name": "Learn a Programming Language",
+      "topics": [
+        {
+          "name": "Python",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Go",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "JavaScript / Node.js",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "operating-system",
+      "name": "Operating System",
+      "topics": [
+        {
+          "name": "Windows",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Bash",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "FreeBSD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Ubuntu / Debian",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "terminal-knowledge",
+      "name": "Terminal Knowledge",
+      "topics": [
+        {
+          "name": "Power Shell",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Process Monitoring",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Performance Monitoring",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "OpenBSD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SUSE Linux",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Networking Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "NetBSD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "RHEL / Derivatives",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Text Manipulation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Vim / Nano /  Emacs",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Forward Proxy",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Reverse Proxy",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "version-control-systems",
+      "name": "Version Control Systems",
+      "topics": [
+        {
+          "name": "Git",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Firewall",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Caching Server",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Docker",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Load Balancer",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "vcs-hosting",
+      "name": "VCS Hosting",
+      "topics": [
+        {
+          "name": "GitHub",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GitLab",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "containers",
+      "name": "Containers",
+      "topics": [
+        {
+          "name": "LXC",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "what-is-and-how-to-setup-x-?",
+      "name": "What is and how to setup X ?",
+      "topics": [
+        {
+          "name": "Bitbucket",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Nginx",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Caddy",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "FTP / SFTP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "DNS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Tomcat",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Apache",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "HTTP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "HTTPS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IIS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "networking-and-protocols",
+      "name": "Networking & Protocols",
+      "topics": [
+        {
+          "name": "SSL / TLS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SSH",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "OSI Model",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cloud-providers",
+      "name": "Cloud Providers",
+      "topics": [
+        {
+          "name": "Learn Cloud Providers",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "serverless",
+      "name": "Serverless",
+      "topics": [
+        {
+          "name": "White / Grey Listing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "AWS Lambda",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "AWS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Azure",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SMTP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "DMARC",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Cloudflare",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Google Cloud",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IMAP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SPF",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Azure Functions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Digital Ocean",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "POP3S",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Vercel",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Alibaba Cloud",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Domain Keys",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Netlify",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Hetzner",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Contabo",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GCP Functions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Heroku",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Papertrail",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Splunk",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "provisioning",
+      "name": "Provisioning",
+      "topics": [
+        {
+          "name": "Learn Provisioning",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "configuration-management",
+      "name": "Configuration Management",
+      "topics": [
+        {
+          "name": "Ansible",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Chef",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Loki",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Puppet",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "AWS CDK",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Elastic Stack",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "CloudFormation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TeamCity",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Pulumi",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Travis CI",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ci-/-cd-tools",
+      "name": "CI / CD Tools",
+      "topics": [
+        {
+          "name": "Jenkins",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Circle CI",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Terraform",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GitLab CI",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Drone",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GitHub Actions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "secret-management",
+      "name": "Secret Management",
+      "topics": [
+        {
+          "name": "Sealed Secrets",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SOPs",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Vault",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "infrastructure-monitoring",
+      "name": "Infrastructure Monitoring",
+      "topics": [
+        {
+          "name": "Learn Infrastructure Monitoring",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "logs-management",
+      "name": "Logs Management",
+      "topics": [
+        {
+          "name": "Graylog",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Cloud Specific Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Prometheus",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Artifactory",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Nexus",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ArgoCD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Grafana",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Zabbix",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Datadog",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "container-orchestration",
+      "name": "Container Orchestration",
+      "topics": [
+        {
+          "name": "Learn Container Orchestration",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "application-monitoring",
+      "name": "Application Monitoring",
+      "topics": [
+        {
+          "name": "Learn Application Monitoring",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "artifact-management",
+      "name": "Artifact Management",
+      "topics": [
+        {
+          "name": "Cloud Smith",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "gitops",
+      "name": "GitOps",
+      "topics": [
+        {
+          "name": "FluxCD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Jaeger",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GKE / EKS / AKS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "New Relic",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "AWS ECS / Fargate",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "service-mesh",
+      "name": "Service Mesh",
+      "topics": [
+        {
+          "name": "Istio",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Consul",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Datadog",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Docker Swarm",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Linkerd",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Prometheus",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Kubernetes",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Envoy",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "OpenTelemetry",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cloud-design-patterns",
+      "name": "Cloud Design Patterns",
+      "topics": [
+        {
+          "name": "Availability",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Data Management",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Design and Implementation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Management and Monitoring",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1023 @@
+{
+  "id": "server-side-game-developer",
+  "name": "Server Side Game Developer",
+  "description": "Detailed roadmap for server side game developer.",
+  "category": "role",
+  "estimatedHours": 1350,
+  "sections": [
+    {
+      "id": "server-side-development",
+      "name": "Server-Side Development",
+      "topics": [
+        {
+          "name": "Learn Server-Side Development",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tcp",
+      "name": "TCP",
+      "topics": [
+        {
+          "name": "Checksum",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "udp",
+      "name": "UDP",
+      "topics": [
+        {
+          "name": "Reliability",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Datagram",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Congestion Control",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Segment Structure",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Checksum",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Vulnerability",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Max Segment Size",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Packet Structure",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Window Scaling",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Denial of Service",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Connection",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Connection Hijacking",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Resource Usage",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Veto",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Max Segment Scaling",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tcp-vs-udp",
+      "name": "TCP vs UDP",
+      "topics": [
+        {
+          "name": "Ordered vs Unordered",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Heavy vs Lightweight",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Packet vs Datagram",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Timestamp",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Reliable vs Unreliable",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Data Transfer",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Congestion Control",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Reliable Transmission",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Streaming vs Broadcast",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Out-of-Band Data",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Flow Control",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Selective Ack.",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Error Detection",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ip",
+      "name": "IP",
+      "topics": [
+        {
+          "name": "Capability",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Reliability",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Link Capacity",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Byte Manipulation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "transactions",
+      "name": "Transactions",
+      "topics": [
+        {
+          "name": "Address Conversion",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ARP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "DNS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "DHCP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "programming-languages",
+      "name": "Programming Languages",
+      "topics": [
+        {
+          "name": "Learn Programming Languages",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "category",
+      "name": "Category",
+      "topics": [
+        {
+          "name": "IPv4",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IPv6",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "C#",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Java",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "topics": [
+        {
+          "name": "TLS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "C/C++",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Erlang",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "socket-programming",
+      "name": "Socket Programming",
+      "topics": [
+        {
+          "name": "Descriptor",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "function",
+      "name": "Function",
+      "topics": [
+        {
+          "name": "JavaScript",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Go",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Datagram Construction",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Sharding",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "API",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "serialization",
+      "name": "Serialization",
+      "topics": [
+        {
+          "name": "IP Addressing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Routing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Fiber",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "BSD Socket",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "JSON",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TOML",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Winsock",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "XML",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "YAML",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "multithreading",
+      "name": "Multithreading",
+      "topics": [
+        {
+          "name": "Thread Local Storage",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Protobuf",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Windows",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "pthread",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "synchronization",
+      "name": "Synchronization",
+      "topics": [
+        {
+          "name": "Learn Synchronization",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "programming-techniques",
+      "name": "Programming Techniques",
+      "topics": [
+        {
+          "name": "Design Patterns",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TDD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Dependency Injection",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Condition Variable",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Dump Analysis",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Redis",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Spinlock",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Functional Programming",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Memcached",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Barrier",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MS SQL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "DynamoDB",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Future & Promises",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Coroutine",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "databases",
+      "name": "Databases",
+      "topics": [
+        {
+          "name": "Channel",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MySQL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MongoDB",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Mutex",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Semaphore",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ORM",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "PostgreSQL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Cassandra",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "DAL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Couchbase",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "REST",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Apache Kafka",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SSL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cipher",
+      "name": "Cipher",
+      "topics": [
+        {
+          "name": "Learn Cipher",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "rpc-/-rest",
+      "name": "RPC / REST",
+      "topics": [
+        {
+          "name": "gRPC",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "message-queues",
+      "name": "Message Queues",
+      "topics": [
+        {
+          "name": "RabbitMQ",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Thread Building Block (C++)",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Concurrency (Java)",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Update Process",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Asnc-await (C#)",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Determinism",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "goroutine (Go)",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "OORP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "FRP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Synchrony",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "task-based",
+      "name": "Task-Based",
+      "topics": [
+        {
+          "name": "Learn Task-Based",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "reactive-approach",
+      "name": "Reactive Approach",
+      "topics": [
+        {
+          "name": "Learn Reactive Approach",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "reactive-model",
+      "name": "Reactive Model",
+      "topics": [
+        {
+          "name": "Learn Reactive Model",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "multithreading",
+      "name": "Multithreading",
+      "topics": [
+        {
+          "name": "Learn Multithreading",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "reactive-approach",
+      "name": "Reactive Approach",
+      "topics": [
+        {
+          "name": "Learn Reactive Approach",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "asynchronous",
+      "name": "Asynchronous",
+      "topics": [
+        {
+          "name": "Learn Asynchronous",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "actor-model",
+      "name": "Actor Model",
+      "topics": [
+        {
+          "name": "Akk.net (C#)",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "proactor",
+      "name": "Proactor",
+      "topics": [
+        {
+          "name": "Learn Proactor",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "reactor",
+      "name": "Reactor",
+      "topics": [
+        {
+          "name": "Akka (Java)",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IOCP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "io_uring",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "select",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "WSA Poll",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Serverless",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "epoll",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "kqueue",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Registered IO",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cloud",
+      "name": "Cloud",
+      "topics": [
+        {
+          "name": "Azure",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GCP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "data-clustering",
+      "name": "Data Clustering",
+      "topics": [
+        {
+          "name": "Learn Data Clustering",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "containerization",
+      "name": "Containerization",
+      "topics": [
+        {
+          "name": "Docker",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "AWS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Apache Spark",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Docker Compose",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Kubernetes",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ai",
+      "name": "AI",
+      "topics": [
+        {
+          "name": "Learn AI",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cloud-ml",
+      "name": "Cloud ML",
+      "topics": [
+        {
+          "name": "Amazon ML",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "deep-learning",
+      "name": "Deep Learning",
+      "topics": [
+        {
+          "name": "Azure ML",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TensorFlow",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Pytorch",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

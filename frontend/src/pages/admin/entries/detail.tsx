@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { fetchEntries } from '@/lib/store/slices/entriesSlice'

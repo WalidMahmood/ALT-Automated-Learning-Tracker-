@@ -1,0 +1,573 @@
+{
+  "id": "technical-writer",
+  "name": "Technical Writer",
+  "description": "Detailed roadmap for technical writer.",
+  "category": "role",
+  "estimatedHours": 720,
+  "sections": [
+    {
+      "id": "intro",
+      "name": "Introduction",
+      "topics": [
+        {
+          "name": "Technology Expertise",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Language Proficiency",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "introduction",
+      "name": "Introduction",
+      "topics": [
+        {
+          "name": "Who is a Technical Writer?",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "What is Technical Writing?",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Role of Technical Writers in Organizations",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Forms of Technical Writing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "required-skills",
+      "name": "Required Skills",
+      "topics": [
+        {
+          "name": "Written Communication Proficiency",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Growth as a Technical Writer",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Blogging Platforms",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SEO Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tooling",
+      "name": "Tooling",
+      "topics": [
+        {
+          "name": "Research Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Publishing Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Editing Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Plagiarism Checker",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Markdown",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Git / Version Control",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "best-practices",
+      "name": "Best Practices",
+      "topics": [
+        {
+          "name": "Story Telling",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Subtle Selling",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Content Structure",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Call to Actions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "References",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "content-research",
+      "name": "Content Research",
+      "topics": [
+        {
+          "name": "Crafting Great Titles",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Topic Score",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Product Content",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Content Objectives & Intent",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Keyword Volume",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "General Product Prose",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "User Persona",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Communities & Forums",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Writing Style Guides",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Search Trends",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ICP & Buyer Persona",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "types-of-technical-content",
+      "name": "Types of Technical Content",
+      "topics": [
+        {
+          "name": "How-to Guides",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Support Request Evaluation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Buyer Journey & Content Funnel",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "developer-docs",
+      "name": "Developer Docs",
+      "topics": [
+        {
+          "name": "Learn Developer Docs",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "api-reference",
+      "name": "API Reference",
+      "topics": [
+        {
+          "name": "Learn API Reference",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "help-content",
+      "name": "Help Content",
+      "topics": [
+        {
+          "name": "Learn Help Content",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "technical-content-marketing",
+      "name": "Technical Content Marketing",
+      "topics": [
+        {
+          "name": "User Goals",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Docs Generation Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Troubleshooting",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Developer Journey",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "API Definitions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Developer Support",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Short-tail Keywords",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Docs Structure",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Platform Support",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Long-Tail Keywords",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Comparative Posts",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Tutorials",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Backlinking",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SEO Keywords",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "content-seo",
+      "name": "Content SEO",
+      "topics": [
+        {
+          "name": "Learn Content SEO",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "top-funnel-content",
+      "name": "Top-funnel Content",
+      "topics": [
+        {
+          "name": "Learn Top-funnel Content",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "mid-funnel-content",
+      "name": "Mid-funnel Content",
+      "topics": [
+        {
+          "name": "Learn Mid-funnel Content",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "bottom-funnel-content",
+      "name": "Bottom-funnel Content",
+      "topics": [
+        {
+          "name": "Pillar Content",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Generic Gated Content",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Link Shorteners / Tracking",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Awareness Blog Posts",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "White-papers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "eBook",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Platform Tracking and Metrics",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Research Reports",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "release-notes-/-product-announcements",
+      "name": "Release Notes / Product Announcements",
+      "topics": [
+        {
+          "name": "Conversion Tracking",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "customer-case-studies",
+      "name": "Customer Case-Studies",
+      "topics": [
+        {
+          "name": "Learn Customer Case-Studies",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "technical-website-copy",
+      "name": "Technical Website Copy",
+      "topics": [
+        {
+          "name": "Learn Technical Website Copy",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "content-optimization",
+      "name": "Content Optimization",
+      "topics": [
+        {
+          "name": "Learn Content Optimization",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "content-analysis",
+      "name": "Content Analysis",
+      "topics": [
+        {
+          "name": "Content Aging & Timelines",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "frequently-asked-questions",
+      "name": "Frequently Asked Questions",
+      "topics": [
+        {
+          "name": "OpenGraph Data",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "content-distribution",
+      "name": "Content Distribution",
+      "topics": [
+        {
+          "name": "Canonical Link",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Content Distribution Channels",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Content Distribution Amplification Strategies",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

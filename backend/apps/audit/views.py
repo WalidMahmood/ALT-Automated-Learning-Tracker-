@@ -9,7 +9,7 @@ class StandardResultsSetPagination(pagination.PageNumberPagination):
     max_page_size = 100
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = AuditLog.objects.all()
+    queryset = AuditLog.objects.select_related('user').all()
     serializer_class = AuditLogSerializer
     permission_classes = [IsAdmin] 
     pagination_class = StandardResultsSetPagination

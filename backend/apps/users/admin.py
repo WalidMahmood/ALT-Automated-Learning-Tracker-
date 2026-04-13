@@ -10,7 +10,7 @@ from .models import User
 class UserAdmin(BaseUserAdmin):
     """Custom admin for User model"""
     
-    list_display = ['email', 'role', 'expertise_level', 'experience_years', 'is_active', 'created_at']
+    list_display = ['email', 'role', 'experience_years', 'is_active', 'created_at']
     list_filter = ['role', 'is_active', 'created_at']
     search_fields = ['email', 'github_url']
     ordering = ['-created_at']
@@ -18,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Profile', {
-            'fields': ('github_url', 'expertise_level', 'experience_years', 'tech_stack', 'role')
+            'fields': ('github_url', 'experience_years', 'tech_stack', 'role')
         }),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')

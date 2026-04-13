@@ -1,0 +1,1089 @@
+{
+  "id": "ios",
+  "name": "Ios",
+  "description": "Detailed roadmap for ios.",
+  "category": "role",
+  "estimatedHours": 1460,
+  "sections": [
+    {
+      "id": "intro",
+      "name": "Introduction",
+      "topics": [
+        {
+          "name": "Interoperability with Swift",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Core OS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Core Services",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "pick-a-language",
+      "name": "Pick a Language",
+      "topics": [
+        {
+          "name": "Learn Pick a Language",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "objective-c",
+      "name": "Objective-C",
+      "topics": [
+        {
+          "name": "Objective-C Basics",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "swift-(recommended)",
+      "name": "Swift (Recommended)",
+      "topics": [
+        {
+          "name": "Learn Swift (Recommended)",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ios-architecture",
+      "name": "iOS Architecture",
+      "topics": [
+        {
+          "name": "Cocoa Touch",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "History and Why Swift?",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Benefits over Objective-C",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Swift Basics",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Core Graphics",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Core Animation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "AVFoundation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Core Image",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "core-programming-concepts",
+      "name": "Core Programming Concepts",
+      "topics": [
+        {
+          "name": "OOP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Functional Programming",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Memory Management",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Core Audio",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ViewController Lifecycle",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Metal",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Error Handling",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Concurrency (GCD, async/await)",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Git",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "version-control",
+      "name": "Version Control",
+      "topics": [
+        {
+          "name": "GitHub",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Components",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Installing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Views",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Preferences",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "View Controllers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "New Project",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "xcode",
+      "name": "Xcode",
+      "topics": [
+        {
+          "name": "Interface overview",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Basic Interfaces",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Declarative Syntax",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Toolbar",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Storyboards",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Navigators",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Components",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "uikit",
+      "name": "UIKit",
+      "topics": [
+        {
+          "name": "User Interactions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Xibs",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Editors",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "State Management",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Navigation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Project Files",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Data binding",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "View Transitions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Groups",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Breakpoints",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Debug Navigator",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "swiftui",
+      "name": "SwiftUI",
+      "topics": [
+        {
+          "name": "Stepping",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Interface Builder",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IBOutlets",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ui-design",
+      "name": "UI Design",
+      "topics": [
+        {
+          "name": "HIG",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Building Interfaces",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IBActions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Views and Modifiers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Auto layout",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Navigation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "uikit",
+      "name": "UIKit",
+      "topics": [
+        {
+          "name": "View Transitions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Views, View Controllers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "swiftui",
+      "name": "SwiftUI",
+      "topics": [
+        {
+          "name": "Learn SwiftUI",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "core-animation",
+      "name": "Core Animation",
+      "topics": [
+        {
+          "name": "Basics / Creating Animations",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Lottie",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Navigation Controllers, Segues",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Navigation Stacks",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Navigation Stacks",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Pushing Presenting",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Navigation View",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Modals and Navigation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "NavigationLink",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "architectural-patterns",
+      "name": "Architectural Patterns",
+      "topics": [
+        {
+          "name": "Combine",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Presenting / Dismissing views",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MVC",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MVP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Publishers / Subscribers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MVVM",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MVVM-C",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Operators & Pipelines",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "VIPER",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TCA",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Combine and MVVM",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "reactive-programming",
+      "name": "Reactive Programming",
+      "topics": [
+        {
+          "name": "RxSwift",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Observables & observers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Subjects",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Operators",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Schedulers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "delegate-pattern",
+      "name": "Delegate Pattern",
+      "topics": [
+        {
+          "name": "Implementing Delegates",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "RxSwift with MVVM",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "callbacks",
+      "name": "Callbacks",
+      "topics": [
+        {
+          "name": "Closures",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Understanding and using Closures",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Capturing Values & Memory Mgmt.",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "data-persistence",
+      "name": "Data Persistence",
+      "topics": [
+        {
+          "name": "Core Data",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "User Defaults",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Keychain",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Callback Hell",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "File System",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SQLite",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "async-/-await",
+      "name": "Async / Await",
+      "topics": [
+        {
+          "name": "Learn Async / Await",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "json-/-xml",
+      "name": "JSON / XML",
+      "topics": [
+        {
+          "name": "Concurrency",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GCD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Parsing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Operation Queues",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Serializing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "CocoaPods",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Carthage",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "name": "Networking",
+      "topics": [
+        {
+          "name": "Learn Networking",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-multithreading",
+      "name": "Concurrency and Multithreading",
+      "topics": [
+        {
+          "name": "Learn Concurrency and Multithreading",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "dependency-manager",
+      "name": "Dependency Manager",
+      "topics": [
+        {
+          "name": "Swift Package Manager",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "HTTP / HTTPs",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Accessibility Inspector",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "REST",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "frameworks-and-library",
+      "name": "Frameworks & Library",
+      "topics": [
+        {
+          "name": "Voice Over",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GraphQL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SwiftLint",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "URLSession",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "XCFramework",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Tailor",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Alamofire",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Static Library",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "accessibility",
+      "name": "Accessibility",
+      "topics": [
+        {
+          "name": "Dynamic Type",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Dynamic Library",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "code-quality-tools",
+      "name": "Code Quality Tools",
+      "topics": [
+        {
+          "name": "SwiftFormat",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Frameworks",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ARKit",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Unit & UI Testing",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "debugging-techniques",
+      "name": "Debugging Techniques",
+      "topics": [
+        {
+          "name": "HealthKit",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "XCTest",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GameKit",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Xcode Debugger",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "XCUITest",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MapKit",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Profiling Instruments",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Core ML",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Test Plan & Coverage",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "app-store-distribution",
+      "name": "App Store Distribution",
+      "topics": [
+        {
+          "name": "Learn App Store Distribution",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "testflight",
+      "name": "TestFlight",
+      "topics": [
+        {
+          "name": "Learn TestFlight",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "fastlane",
+      "name": "FastLane",
+      "topics": [
+        {
+          "name": "Learn FastLane",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ci-/-cd",
+      "name": "CI / CD",
+      "topics": [
+        {
+          "name": "Jenkins",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "CircleCI",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GitHub Actions",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GitLab",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Azure DevOps",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "keeping-updated-with-wwdc",
+      "name": "Keeping Updated with WWDC",
+      "topics": [
+        {
+          "name": "Learn Keeping Updated with WWDC",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "app-store-optimization-(aso)",
+      "name": "App Store Optimization (ASO)",
+      "topics": [
+        {
+          "name": "Latest Swift Version",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Latest iOS SDK",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "New Feature Announcements",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Media",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

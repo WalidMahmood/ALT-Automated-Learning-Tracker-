@@ -1,0 +1,15 @@
+{
+  "site_package_search_strategy": "pep561",
+  "source_directories": [
+    {
+      "root": "backend",
+      "subdirectory": "."
+    }
+  ],
+  "search_path": [
+    "backend/venv/Lib/site-packages"
+  ],
+  "python_version": "3.11",
+  "venv": "backend/venv",
+  "venv_search_path": "backend"
+}

@@ -1,0 +1,105 @@
+{
+  "id": "ai-data-scientist",
+  "name": "Ai Data Scientist",
+  "description": "Detailed roadmap for ai data scientist.",
+  "category": "role",
+  "estimatedHours": 80,
+  "sections": [
+    {
+      "id": "mathematics",
+      "name": "Mathematics",
+      "topics": [
+        {
+          "name": "Learn Mathematics",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "statistics",
+      "name": "Statistics",
+      "topics": [
+        {
+          "name": "Learn Statistics",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "econometrics",
+      "name": "Econometrics",
+      "topics": [
+        {
+          "name": "Learn Econometrics",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "coding",
+      "name": "Coding",
+      "topics": [
+        {
+          "name": "Learn Coding",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "exploratory-data-analysis",
+      "name": "Exploratory Data Analysis",
+      "topics": [
+        {
+          "name": "Learn Exploratory Data Analysis",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "machine-learning",
+      "name": "Machine Learning",
+      "topics": [
+        {
+          "name": "Learn Machine Learning",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "deep-learning",
+      "name": "Deep Learning",
+      "topics": [
+        {
+          "name": "Learn Deep Learning",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "mlops",
+      "name": "MLOps",
+      "topics": [
+        {
+          "name": "Learn MLOps",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

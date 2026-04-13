@@ -46,11 +46,7 @@ class Command(BaseCommand):
             
             celery_process = subprocess.Popen(
                 [sys.executable, '-m', 'celery', '-A', 'config', 'worker', 
-                 '--loglevel=info', '--pool=solo', '--concurrency=1'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                startupinfo=startupinfo,
-                creationflags=creationflags,
+                 '--loglevel=info', '--pool=solo', '--concurrency=1', '--purge'],
                 cwd=os.getcwd()
             )
             

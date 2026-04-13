@@ -1,0 +1,723 @@
+{
+  "id": "software-architect",
+  "name": "Software Architect",
+  "description": "Detailed roadmap for software architect.",
+  "category": "role",
+  "estimatedHours": 1010,
+  "sections": [
+    {
+      "id": "understand-the-basics",
+      "name": "Understand the Basics",
+      "topics": [
+        {
+          "name": "What is Software Architecture",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "What is a Software Architect",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Levels of Architecture",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Application Architecture",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "responsibilities",
+      "name": "Responsibilities",
+      "topics": [
+        {
+          "name": "Solution Architecture",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Enterprise Architecture",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Design & Architecture",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Decision Making",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Java / Kotlin / Scala",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Simplifying Things",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Python",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Ruby",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Go",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "JavaScript / TypeScript",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "important-skills-to-learn",
+      "name": "Important Skills to Learn",
+      "topics": [
+        {
+          "name": "How to Code",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "technical-skills",
+      "name": "Technical Skills",
+      "topics": [
+        {
+          "name": "Learn Technical Skills",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "programming-languages",
+      "name": "Programming Languages",
+      "topics": [
+        {
+          "name": ".NET Framework Based",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Documentation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Communication",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GitHub",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Estimate and Evaluate",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "topics": [
+        {
+          "name": "Learn Tools",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "patterns-and-design-principles",
+      "name": "Patterns & Design Principles",
+      "topics": [
+        {
+          "name": "Learn Patterns & Design Principles",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "topics": [
+        {
+          "name": "Git",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Slack",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Balance",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Trello",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "MVC, MVP, MVVM",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Consult & Coach",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Atlassian Tools",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "topics": [
+        {
+          "name": "CQRS, Eventual Consistency",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Marketing Skills",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "OOP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Actors",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Microservices",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ACID, CAP Theorem",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Serverless",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "OWASP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "topics": [
+        {
+          "name": "Hashing Algorithms",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "PKI",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SOLID",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TDD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "DDD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Client / Server",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Auth Strategies",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Layered",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Distributed Systems",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "working-with-data",
+      "name": "Working with Data",
+      "topics": [
+        {
+          "name": "Hadoop, Spark, MapReduce",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ETL, Datawarehouses",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Service Oriented",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SQL Databases",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "apis-and-integrations",
+      "name": "APIs & Integrations",
+      "topics": [
+        {
+          "name": "Learn APIs & Integrations",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "web,-mobile",
+      "name": "Web, Mobile",
+      "topics": [
+        {
+          "name": "Reactive Programming",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Functional Programming",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "React, Vue, Angular",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SPA, SSR, SSG",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "NoSQL Databases",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Microfrontends",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "gRPC",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "W3C and WHATWG",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "frameworks",
+      "name": "Frameworks",
+      "topics": [
+        {
+          "name": "Apache Spark",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Hadoop",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ESB, SOAP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "PMI",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "ITIL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "RUP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Datawarehouse Principles",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "GraphQL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "REST",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "BABOK",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Prince2",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "BPM, BPEL",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IAF",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Messaging Queues",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "UML",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TOGAF",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "management",
+      "name": "Management",
+      "topics": [
+        {
+          "name": "Learn Management",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "networks",
+      "name": "Networks",
+      "topics": [
+        {
+          "name": "Learn Networks",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "operations-knowledge",
+      "name": "Operations Knowledge",
+      "topics": [
+        {
+          "name": "Infrastructure as Code",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Cloud Providers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Serverless Concepts",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Linux / Unix",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "LeSS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SaFE",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "XP",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Service Mesh",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "OSI",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Kanban",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Scrum",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "CI / CD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "TCP/IP Model",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Containers",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "HTTP, HTTPS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Cloud Design Patterns",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Proxies",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Firewalls",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "enterprise-software",
+      "name": "Enterprise Software",
+      "topics": [
+        {
+          "name": "MS Dynamics",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SAP ERP, HANA, Business Objects",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "EMC DMS",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "IBM BPM",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Salesforce",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

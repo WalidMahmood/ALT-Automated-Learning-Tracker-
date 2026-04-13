@@ -1,0 +1,291 @@
+{
+  "id": "full-stack",
+  "name": "Full Stack",
+  "description": "Detailed roadmap for full stack.",
+  "category": "role",
+  "estimatedHours": 280,
+  "sections": [
+    {
+      "id": "html",
+      "name": "HTML",
+      "topics": [
+        {
+          "name": "Learn HTML",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "css",
+      "name": "CSS",
+      "topics": [
+        {
+          "name": "Learn CSS",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "javascript",
+      "name": "JavaScript",
+      "topics": [
+        {
+          "name": "Checkpoint - Static Webpages",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Checkpoint - Interactivity",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "npm",
+      "name": "npm",
+      "topics": [
+        {
+          "name": "Checkpoint - External Packages",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Checkpoint - Collaborative Work",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "topics": [
+        {
+          "name": "Learn Git",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "topics": [
+        {
+          "name": "Learn GitHub",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tailwind-css",
+      "name": "Tailwind CSS",
+      "topics": [
+        {
+          "name": "Learn Tailwind CSS",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "react",
+      "name": "React",
+      "topics": [
+        {
+          "name": "Checkpoint - Frontend Apps",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "node.js",
+      "name": "Node.js",
+      "topics": [
+        {
+          "name": "Checkpoint \u2014 CLI Apps",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "postgresql",
+      "name": "PostgreSQL",
+      "topics": [
+        {
+          "name": "Checkpoint \u2014 Simple CRUD Apps",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "restful-apis",
+      "name": "RESTful APIs",
+      "topics": [
+        {
+          "name": "Learn RESTful APIs",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "jwt-auth",
+      "name": "JWT Auth",
+      "topics": [
+        {
+          "name": "Learn JWT Auth",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "name": "Redis",
+      "topics": [
+        {
+          "name": "Checkpoint \u2014 Complete App",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Route53",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "SES",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "EC2",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "VPC",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "S3",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "linux-basics",
+      "name": "Linux Basics",
+      "topics": [
+        {
+          "name": "Learn Linux Basics",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "basic-aws-services",
+      "name": "Basic AWS Services",
+      "topics": [
+        {
+          "name": "Checkpoint \u2014 Deployment",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "monit",
+      "name": "Monit",
+      "topics": [
+        {
+          "name": "Checkpoint \u2014 Automation",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Checkpoint \u2014 Monitoring",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        },
+        {
+          "name": "Checkpoint \u2014 CI / CD",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "github-actions",
+      "name": "GitHub Actions",
+      "topics": [
+        {
+          "name": "Learn GitHub Actions",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ansible",
+      "name": "Ansible",
+      "topics": [
+        {
+          "name": "Learn Ansible",
+          "benchmarkHours": 8,
+          "difficulty": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "terraform",
+      "name": "Terraform",
+      "topics": [
+        {
+          "name": "Checkpoint \u2014 Infrastructure",
+          "benchmarkHours": 2,
+          "difficulty": 2,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

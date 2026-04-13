@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Check, Loader2 } from 'lucide-react'
 import { Entry, EntryStatus, OverrideReason, OVERRIDE_REASONS } from '@/lib/types'
+import { toast } from 'sonner'
 
 interface OverrideModalProps {
     entry: Entry | null
@@ -52,7 +53,7 @@ export function OverrideModal({ entry, open, onClose }: OverrideModalProps) {
             onClose()
         } catch (error) {
             console.error('Override failed:', error)
-            alert(error instanceof Error ? error.message : 'Failed to override entry')
+            toast.error('Override Failed', { description: error instanceof Error ? error.message : 'Failed to override entry' })
         } finally {
             setIsSubmitting(false)
         }
@@ -62,7 +63,7 @@ export function OverrideModal({ entry, open, onClose }: OverrideModalProps) {
 
     return (
         <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent>
+            <DialogContent className="glass-panel border-white/10 shadow-2xl">
                 <DialogHeader>
                     <DialogTitle>Override Entry</DialogTitle>
                     <DialogDescription>

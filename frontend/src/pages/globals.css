@@ -3,88 +3,122 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* === PREMIUM THEME SYSTEM === */
+/* Light Mode: Pristine Snow & Soft Indigo */
 :root {
-  --background: oklch(0.98 0.005 250);
-  --foreground: oklch(0.15 0.01 250);
+  --background: oklch(0.99 0.01 260);
+  /* Frost white with hint of blue */
+  --foreground: oklch(0.15 0.02 260);
+  /* Deep slate */
+
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.01 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 250);
-  --primary: oklch(0.55 0.18 250);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.95 0.01 250);
-  --secondary-foreground: oklch(0.2 0.01 250);
-  --muted: oklch(0.94 0.01 250);
-  --muted-foreground: oklch(0.5 0.02 250);
-  --accent: oklch(0.92 0.02 250);
-  --accent-foreground: oklch(0.2 0.01 250);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.9 0.01 250);
-  --input: oklch(0.9 0.01 250);
-  --ring: oklch(0.55 0.18 250);
-  --chart-1: oklch(0.55 0.18 250);
-  --chart-2: oklch(0.65 0.15 170);
-  --chart-3: oklch(0.7 0.18 80);
+  /* Pure white */
+  --card-foreground: oklch(0.15 0.02 260);
+
+  --popover: oklch(1 0 0 / 0.8);
+  --popover-foreground: oklch(0.15 0.02 260);
+
+  --primary: oklch(0.55 0.2 260);
+  /* Vibrant Indigo */
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.96 0.02 260);
+  /* Soft blue-gray */
+  --secondary-foreground: oklch(0.25 0.03 260);
+
+  --muted: oklch(0.96 0.02 260);
+  --muted-foreground: oklch(0.55 0.05 260);
+
+  --accent: oklch(0.96 0.02 260);
+  --accent-foreground: oklch(0.15 0.02 260);
+
+  --destructive: oklch(0.6 0.25 25);
+  /* Sharp Ruby */
+  --destructive-foreground: oklch(1 0 0);
+
+  --border: oklch(0.9 0.03 260);
+  /* Subtle border */
+  --input: oklch(0.95 0.03 260);
+  --ring: oklch(0.55 0.2 260 / 0.3);
+
+  --sidebar: oklch(0.98 0.01 260);
+  /* Slightly off-white for contrast */
+  --sidebar-foreground: oklch(0.15 0.02 260);
+  --sidebar-primary: oklch(0.55 0.2 260);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.03 260);
+  --sidebar-accent-foreground: oklch(0.15 0.02 260);
+  --sidebar-border: oklch(0.9 0.03 260);
+  --sidebar-ring: oklch(0.55 0.2 260 / 0.3);
+
+  --success: oklch(0.65 0.2 150);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.7 0.2 80);
+  --warning-foreground: oklch(0.2 0.05 80);
+
+  --chart-1: oklch(0.55 0.2 260);
+  --chart-2: oklch(0.65 0.2 170);
+  --chart-3: oklch(0.7 0.2 80);
   --chart-4: oklch(0.6 0.2 320);
   --chart-5: oklch(0.6 0.2 30);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.97 0.005 250);
-  --sidebar-foreground: oklch(0.15 0.01 250);
-  --sidebar-primary: oklch(0.55 0.18 250);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.92 0.02 250);
-  --sidebar-accent-foreground: oklch(0.2 0.01 250);
-  --sidebar-border: oklch(0.9 0.01 250);
-  --sidebar-ring: oklch(0.55 0.18 250);
-  --success: oklch(0.65 0.18 150);
-  --success-foreground: oklch(0.98 0 0);
-  --warning: oklch(0.75 0.15 80);
-  --warning-foreground: oklch(0.2 0 0);
+
+  --radius: 0.75rem;
+  /* Smoother, rounder corners */
 }
 
+/* Dark Mode: Deep Space & Neon Indigo */
 .dark {
-  --background: oklch(0.12 0.01 250);
-  --foreground: oklch(0.95 0.005 250);
-  --card: oklch(0.16 0.01 250);
-  --card-foreground: oklch(0.95 0.005 250);
-  --popover: oklch(0.16 0.01 250);
-  --popover-foreground: oklch(0.95 0.005 250);
-  --primary: oklch(0.65 0.2 250);
-  --primary-foreground: oklch(0.12 0 0);
-  --secondary: oklch(0.22 0.01 250);
-  --secondary-foreground: oklch(0.95 0.005 250);
-  --muted: oklch(0.22 0.01 250);
-  --muted-foreground: oklch(0.65 0.02 250);
-  --accent: oklch(0.25 0.02 250);
-  --accent-foreground: oklch(0.95 0.005 250);
-  --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.25 0.01 250);
-  --input: oklch(0.22 0.01 250);
-  --ring: oklch(0.65 0.2 250);
-  --chart-1: oklch(0.65 0.2 250);
-  --chart-2: oklch(0.7 0.15 170);
-  --chart-3: oklch(0.75 0.18 80);
-  --chart-4: oklch(0.65 0.22 320);
-  --chart-5: oklch(0.65 0.22 30);
-  --sidebar: oklch(0.14 0.01 250);
-  --sidebar-foreground: oklch(0.95 0.005 250);
-  --sidebar-primary: oklch(0.65 0.2 250);
-  --sidebar-primary-foreground: oklch(0.12 0 0);
-  --sidebar-accent: oklch(0.22 0.01 250);
-  --sidebar-accent-foreground: oklch(0.95 0.005 250);
-  --sidebar-border: oklch(0.25 0.01 250);
-  --sidebar-ring: oklch(0.65 0.2 250);
-  --success: oklch(0.7 0.18 150);
-  --success-foreground: oklch(0.12 0 0);
-  --warning: oklch(0.8 0.15 80);
-  --warning-foreground: oklch(0.12 0 0);
+  --background: oklch(0.1 0.01 260);
+  /* Deep midnight blue */
+  --foreground: oklch(0.98 0.01 260);
+  /* Starlight white */
+
+  --card: oklch(0.13 0.02 260);
+  /* Slightly elevated dark surface */
+  --card-foreground: oklch(0.98 0.01 260);
+
+  --popover: oklch(0.13 0.02 260 / 0.8);
+  --popover-foreground: oklch(0.98 0.01 260);
+
+  --primary: oklch(0.65 0.2 260);
+  /* Glowing Indigo */
+  --primary-foreground: oklch(0.1 0.01 260);
+
+  --secondary: oklch(0.18 0.03 260);
+  --secondary-foreground: oklch(0.95 0.01 260);
+
+  --muted: oklch(0.18 0.03 260);
+  --muted-foreground: oklch(0.65 0.05 260);
+
+  --accent: oklch(0.18 0.03 260);
+  --accent-foreground: oklch(0.98 0.01 260);
+
+  --destructive: oklch(0.5 0.25 25);
+  --destructive-foreground: oklch(0.98 0.01 260);
+
+  --border: oklch(0.22 0.03 260);
+  --input: oklch(0.18 0.03 260);
+  --ring: oklch(0.65 0.2 260 / 0.5);
+
+  --sidebar: oklch(0.11 0.02 260);
+  --sidebar-foreground: oklch(0.95 0.01 260);
+  --sidebar-primary: oklch(0.65 0.2 260);
+  --sidebar-primary-foreground: oklch(0.1 0.01 260);
+  --sidebar-accent: oklch(0.16 0.03 260);
+  --sidebar-accent-foreground: oklch(0.95 0.01 260);
+  --sidebar-border: oklch(0.18 0.03 260);
+  --sidebar-ring: oklch(0.65 0.2 260 / 0.3);
+
+  --success: oklch(0.6 0.2 150);
+  --success-foreground: oklch(0.98 0.01 260);
+  --warning: oklch(0.7 0.2 80);
+  --warning-foreground: oklch(0.1 0 0);
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -131,14 +165,253 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* ── Readability: ensure minimum readable font size globally ── */
+/* === PREMIUM UI UTILITIES === */
+
+/* Glassmorphism Panels */
+.glass-panel {
+  @apply bg-background/60 backdrop-blur-xl border border-white/10 dark:border-white/5 shadow-xl shadow-black/5 dark:shadow-black/20;
+}
+
+/* Premium Dashboard Cards (Futuristic) */
+.premium-card {
+  @apply relative overflow-hidden bg-card backdrop-blur-xl border border-primary/20 shadow-lg shadow-primary/5 transition-all duration-500 hover:shadow-xl hover:shadow-primary/20 hover:border-primary/50;
+}
+
+.premium-card::before {
+  content: "";
+  @apply absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none;
+}
+
+.premium-card::after {
+  content: "";
+  @apply absolute -inset-full w-[40%] h-[200%] block transform -skew-x-[25deg] bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent pointer-events-none z-10;
+  animation: shine-sweep 7s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+@keyframes shine-sweep {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  20% {
+    left: 200%;
+    opacity: 0;
+  }
+
+  100% {
+    left: 200%;
+    opacity: 0;
+  }
+}
+
+/* Donut chart animations */
+@keyframes donut-segment-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Deep glow effects */
+.glow-primary {
+  @apply relative;
+}
+
+.glow-primary::after {
+  content: "";
+  @apply absolute -inset-0.5 bg-primary/20 blur-xl rounded-full opacity-0 transition-opacity duration-300 pointer-events-none;
+}
+
+.glow-primary:hover::after {
+  @apply opacity-100;
+}
+
+/* Smooth data table rows */
+.premium-table-row {
+  @apply transition-all duration-200 hover:bg-muted/40 hover:scale-[1.002] cursor-pointer;
+}
+
+/* Readable small text */
 .text-xs {
-  font-size: 0.8125rem !important;  /* 13px instead of 12px */
+  font-size: 0.8125rem !important;
   line-height: 1.5 !important;
+  letter-spacing: 0.01em;
+}
+
+/* Hide scrollbar for tables on Windows but keep scrolling functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* === PRINT STYLES (Reports PDF Export) === */
+@media print {
+  /* Hide EVERYTHING that isn't the report */
+  [data-sidebar],
+  aside,
+  header,
+  nav,
+  .print\:hidden,
+  [data-sidebar-trigger],
+  button[class*="sidebar"],
+  [class*="breadcrumb"],
+  [class*="SidebarInset"] > header,
+  div[class*="sticky top-0"] {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+  }
+
+  /* Force light mode white background */
+  html, body {
+    background: white !important;
+    color: #1a1a1a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Kill ALL scrollbars */
+  *, *::before, *::after {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Remove ALL wrappers that constrain width */
+  body > div,
+  main,
+  [role="main"],
+  [class*="SidebarInset"],
+  [class*="peer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  /* The report container itself */
+  #reports-page {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Clean card styling — no shadows, thin borders, overflow hidden for content */
+  [class*="card"] {
+    box-shadow: none !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+  }
+
+  /* Chart containers: constrain to their cards */
+  .recharts-wrapper,
+  .recharts-surface {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+
+  /* Recharts legend text: prevent overflow */
+  .recharts-legend-wrapper {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+
+  /* Prevent breaks inside charts/cards */
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Grid layout: force proper columns */
+  .print\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .print\:col-span-2 { grid-column: span 2 / span 2 !important; }
+  .print\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* Show print-only elements */
+  .print\:block { display: block !important; }
+  .hidden.print\:block { display: block !important; }
+
+  /* Force print shadow-none */
+  .print\:shadow-none { box-shadow: none !important; }
+
+  /* Prose/markdown content must be visible */
+  .prose, .prose * {
+    overflow: visible !important;
+    color: #1a1a1a !important;
+  }
+  .prose h2 { color: #000 !important; font-size: 1.1rem !important; margin-top: 1rem !important; }
+  .prose strong { color: #000 !important; }
+  .prose li { color: #333 !important; }
+  .prose p { color: #333 !important; }
+
+  /* Table styling for print */
+  table, [data-slot="table"] {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 11px !important;
+  }
+  [data-slot="table-container"] {
+    overflow: visible !important;
+  }
+  th, [data-slot="table-head"] {
+    background: #f3f4f6 !important;
+    color: #111 !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #d1d5db !important;
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+  }
+  td, [data-slot="table-cell"] {
+    color: #333 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 4px 6px !important;
+    font-size: 9px !important;
+  }
+  /* Badge colors for print */
+  [data-slot="badge"], .inline-flex[class*="badge"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+  }
+  /* Force table to stay within page */
+  table {
+    table-layout: fixed !important;
+    word-wrap: break-word !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 1.2cm;
+    size: A4;
+  }
 }

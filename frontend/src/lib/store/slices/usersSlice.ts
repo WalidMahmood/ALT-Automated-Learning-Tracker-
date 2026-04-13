@@ -19,13 +19,19 @@ const initialState: UsersState = {
 // Async Thunks
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
-  async (_, { rejectWithValue }) => {
+  async (force: boolean = false, { rejectWithValue }) => {
     try {
-      const response = await api.get('/users/profile/list_all/')
+      const response = await api.get('/users/profile/list_all/?status=all')
       return Array.isArray(response.data) ? response.data : response.data.results
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch users')
     }
+  },
+  {
+    condition: (force, { getState }) => {
+      const { users } = getState() as { users: UsersState }
+      return !users.isLoading
+    },
   }
 )
 

@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Track fields that should trigger re-analysis
-AI_SENSITIVE_FIELDS = {'hours', 'learned_text', 'blockers_text', 'topic_id'}
+AI_SENSITIVE_FIELDS = {'hours', 'learned_text', 'blockers_text', 'topic_id', 'is_completed'}
 
 
 @receiver(pre_save, sender=Entry)
@@ -92,3 +92,22 @@ def update_mastery_on_delete(sender, instance, **kwargs):
         mastery.recalculate_mastery()
     except LearnerTopicMastery.DoesNotExist:
         pass
+
+
+# =============================================================================
+# v7.0: GlobalWisdom → ChromaDB auto-sync
+# =============================================================================
+
+@receiver(post_save, sender='entries.GlobalWisdom')
+def sync_wisdom_to_chromadb(sender, instance, created, **kwargs):
+    """
+    v7.0: When an admin creates/updates a GlobalWisdom correction,
+    automatically sync it to ChromaDB for semantic retrieval.
+    """
+    try:
+        from .rag_engine import RAGEngine
+        rag = RAGEngine.get_instance()
+        rag.sync_wisdom(instance)
+        logger.info(f"SIGNAL: GlobalWisdom #{instance.id} synced to ChromaDB.")
+    except Exception as e:
+        logger.warning(f"SIGNAL: Failed to sync GlobalWisdom #{instance.id} to ChromaDB: {e}")

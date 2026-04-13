@@ -97,14 +97,14 @@ export default function LeavePage() {
                                     </TableRow>
                                 ) : (
                                     activeRequests.map((request) => {
-                                        const requestUser = users.find((u) => u.id === request.user_id)
+                                        const requestUser = users.find((u) => u.id === request.user)
 
                                         return (
                                             <TableRow key={request.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="font-medium">{requestUser?.name || `User ${request.user_id}`}</span>
+                                                        <span className="font-medium">{requestUser?.name || `User ${request.user}`}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -172,7 +172,7 @@ function RejectDialog({
     isLoading: boolean
 }) {
     const [comment, setComment] = useState('')
-    const requestUser = request ? users.find(u => u.id === request.user_id) : null
+    const requestUser = request ? users.find(u => u.id === request.user) : null
 
     if (!request) return null
 
@@ -182,7 +182,7 @@ function RejectDialog({
                 <DialogHeader>
                     <DialogTitle>Reject Leave</DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to reject this leave for {requestUser?.name || `User ${request.user_id}`}?
+                        Are you sure you want to reject this leave for {requestUser?.name || `User ${request.user}`}?
                         A reason is mandatory for rejection.
                     </DialogDescription>
                 </DialogHeader>

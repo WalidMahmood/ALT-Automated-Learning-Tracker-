@@ -169,8 +169,14 @@ class UserListCreateView(generics.ListCreateAPIView):
         return UserSerializer
     
     def get_queryset(self):
-        """Filter active users, optionally by role"""
-        queryset = User.objects.filter(is_active=True)
+        """Filter users, optionally by role and status"""
+        status_param = self.request.query_params.get('status', 'active')
+        if status_param == 'inactive':
+            queryset = User.objects.filter(is_active=False)
+        elif status_param == 'all':
+            queryset = User.objects.all()
+        else:
+            queryset = User.objects.filter(is_active=True)
         role = self.request.query_params.get('role', None)
         if role in ['learner', 'admin']:
             queryset = queryset.filter(role=role)
@@ -185,7 +191,7 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     GET/PUT/DELETE /api/users/<id>/
     Retrieve, update, or soft-delete a user (admin only)
     """
-    queryset = User.objects.filter(is_active=True)
+    queryset = User.objects.all()  # Include inactive users so admins can reactivate
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
     

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import type { TrainingPlan, PlanAssignment } from '@/lib/types'
+import type { TrainingPlan, PlanAssignment, RoadmapTemplate } from '@/lib/types'
 import api from '@/lib/api'
 
 interface TrainingPlansState {
@@ -7,7 +7,9 @@ interface TrainingPlansState {
   selectedPlan: TrainingPlan | null
   userAssignments: PlanAssignment[]
   isLoading: boolean
+  isImporting: boolean
   error: string | null
+  lastFetched: number | null
 }
 
 const initialState: TrainingPlansState = {
@@ -15,31 +17,50 @@ const initialState: TrainingPlansState = {
   selectedPlan: null,
   userAssignments: [],
   isLoading: false,
+  isImporting: false,
   error: null,
+  lastFetched: null,
 }
 
 // Async Thunks
 export const fetchTrainingPlans = createAsyncThunk(
   'trainingPlans/fetchPlans',
-  async (_, { rejectWithValue }) => {
+  async (force: boolean = false, { rejectWithValue }) => {
     try {
       const response = await api.get('/training-plans/')
       return Array.isArray(response.data) ? response.data : response.data.results
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch training plans')
     }
+  },
+  {
+    condition: (force, { getState }) => {
+      const { trainingPlans } = getState() as { trainingPlans: TrainingPlansState }
+      if (trainingPlans.isLoading) return false
+      if (!force && trainingPlans.lastFetched && Date.now() - trainingPlans.lastFetched < 30000) return false
+      return true
+    },
   }
 )
 
 export const fetchUserAssignments = createAsyncThunk(
   'trainingPlans/fetchUserAssignments',
-  async (_, { rejectWithValue }) => {
+  async (force: boolean = false, { rejectWithValue }) => {
     try {
       const response = await api.get('/training-plans/assignments/my_assignments/')
       return Array.isArray(response.data) ? response.data : response.data.results
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch assignments')
     }
+  },
+  {
+    condition: (force, { getState }) => {
+      const { trainingPlans } = getState() as { trainingPlans: TrainingPlansState }
+      // Allow parallel fetch with plans - don't block on isLoading
+      // Only skip if we have fresh data and not forcing
+      if (!force && trainingPlans.userAssignments.length > 0 && trainingPlans.lastFetched && Date.now() - trainingPlans.lastFetched < 30000) return false
+      return true
+    },
   }
 )
 
@@ -51,6 +72,49 @@ export const assignPlanThunk = createAsyncThunk(
       return response.data
     } catch (error: any) {
       return rejectWithValue(error.response?.data || 'Failed to assign plan')
+    }
+  }
+)
+
+export const importTemplate = createAsyncThunk(
+  'trainingPlans/importTemplate',
+  async (template: RoadmapTemplate, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/training-plans/import-template/', {
+        template_id: template.id,
+        template_data: {
+          name: template.name,
+          description: template.description,
+          sections: template.sections,
+        }
+      })
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to import template')
+    }
+  }
+)
+
+export const fetchPlanDetails = createAsyncThunk(
+  'trainingPlans/fetchPlanDetails',
+  async (planId: number, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/training-plans/${planId}/`)
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch plan details')
+    }
+  }
+)
+
+export const fetchPlanProgress = createAsyncThunk(
+  'trainingPlans/fetchPlanProgress',
+  async (planId: number, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/training-plans/${planId}/progress/`)
+      return response.data
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch plan progress')
     }
   }
 )
@@ -80,6 +144,7 @@ const trainingPlansSlice = createSlice({
       .addCase(fetchTrainingPlans.fulfilled, (state, action) => {
         state.plans = action.payload
         state.isLoading = false
+        state.lastFetched = Date.now()
       })
       .addCase(fetchTrainingPlans.rejected, (state, action) => {
         state.isLoading = false
@@ -107,6 +172,28 @@ const trainingPlansSlice = createSlice({
           }
         }
       })
+      // Import Template
+      .addCase(importTemplate.pending, (state) => {
+        state.isImporting = true
+        state.error = null
+      })
+      .addCase(importTemplate.fulfilled, (state, action) => {
+        state.plans.unshift(action.payload)
+        state.isImporting = false
+      })
+      .addCase(importTemplate.rejected, (state, action) => {
+        state.isImporting = false
+        state.error = action.payload as string
+      })
+      // Fetch Single Plan Details — merge to preserve list-API fields like topic_count
+      .addCase(fetchPlanDetails.fulfilled, (state, action) => {
+        const index = state.plans.findIndex(p => p.id === action.payload.id)
+        if (index !== -1) {
+          state.plans[index] = { ...state.plans[index], ...action.payload }
+        } else {
+          state.plans.push(action.payload)
+        }
+      })
   }
 })
 
@@ -117,3 +204,4 @@ export const {
 } = trainingPlansSlice.actions
 
 export default trainingPlansSlice.reducer
+

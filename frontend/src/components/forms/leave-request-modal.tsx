@@ -18,6 +18,7 @@ import { CalendarIcon, Loader2, Trash2, AlertCircle } from 'lucide-react'
 import type { LeaveRequest } from '@/lib/types'
 import { DateRange } from 'react-day-picker'
 import { isWithinInterval, parseISO, addDays, subDays } from 'date-fns'
+import { toast } from 'sonner'
 
 export function LeaveRequestModal() {
   const dispatch = useAppDispatch()
@@ -135,7 +136,7 @@ export function LeaveRequestModal() {
     }
 
     // Fallback?
-    alert("Complex overlap not supported purely via quick actions. Please cancel and recreate.")
+    toast.warning("Action Not Supported", { description: "Complex overlap not supported purely via quick actions. Please cancel and recreate." })
   }
 
   // Disable past dates

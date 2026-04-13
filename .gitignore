@@ -140,6 +140,9 @@ temp/
 *.db
 *.sqlite
 *.sql
+
+# ChromaDB (RAG pipeline v7.0)
+chroma_db/
 # dependencies
 /node_modules
 

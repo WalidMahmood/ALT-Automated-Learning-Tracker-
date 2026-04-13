@@ -10,6 +10,56 @@ export interface UserProject {
   entry_count: number
   latest_date: string
   is_completed: boolean
+  assigned_users?: { id: number; email: string; full_name: string | null }[]
+  key_modules?: string[]
+  features?: any[]
+  module_status?: { module: string; status: 'untouched' | 'in_progress' | 'completed'; entry_count: number; total_hours: number; users: string[] }[]
+  start_date?: string | null
+  end_date?: string | null
+}
+
+export interface DashboardStats {
+  counts: {
+    total: number
+    approved: number
+    flagged: number
+    needsReview: number
+    processing: number
+    error: number
+    totalHours: number
+    totalLearners: number
+    pendingLeaves: number
+  }
+  avgConfidence: number
+  weeklyActivity: { date: string; label: string; approved: number; pending: number; flagged: number }[]
+  topTopics: { name: string; hours: number; entries: number }[]
+}
+
+export interface TopicSummaryItem {
+  id: number
+  name: string
+  created_at: string
+  entries: number
+  hours: number
+  flagged: number
+  userCount: number
+}
+
+export interface TopicSummaryResponse {
+  count: number
+  page: number
+  page_size: number
+  results: TopicSummaryItem[]
+}
+
+export interface TopicSummaryParams {
+  page?: number
+  page_size?: number
+  search?: string
+  sort?: string
+  order?: 'asc' | 'desc'
+  flagged?: 'all' | 'has_flagged' | 'no_flagged'
+  min_entries?: number
 }
 
 interface EntriesState {
@@ -18,6 +68,11 @@ interface EntriesState {
   userProjects: UserProject[]
   isLoading: boolean
   error: string | null
+  lastFetched: number | null
+  dashboardStats: DashboardStats | null
+  dashboardStatsLoading: boolean
+  topicSummary: TopicSummaryResponse | null
+  topicSummaryLoading: boolean
   filters: {
     status: EntryStatus | 'all'
     dateRange: { start: string; end: string } | null
@@ -32,6 +87,11 @@ const initialState: EntriesState = {
   userProjects: [],
   isLoading: false,
   error: null,
+  lastFetched: null,
+  dashboardStats: null,
+  dashboardStatsLoading: false,
+  topicSummary: null,
+  topicSummaryLoading: false,
   filters: {
     status: 'all',
     dateRange: null,
@@ -46,11 +106,31 @@ export const fetchEntries = createAsyncThunk(
   async (params: any = {}, { rejectWithValue }) => {
     try {
       const response = await api.get('/entries/', { params })
-      // If DRF returns results in 'results' key because of pagination
-      return Array.isArray(response.data) ? response.data : response.data.results
+      // Handle both paginated and non-paginated responses
+      const data = Array.isArray(response.data) ? response.data : (response.data.results || [])
+      return data
     } catch (error: any) {
+      console.error('fetchEntries error:', error)
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch entries')
     }
+  }
+)
+
+export const fetchDashboardStats = createAsyncThunk(
+  'entries/fetchDashboardStats',
+  async (force: boolean = false, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/entries/dashboard_stats/')
+      return response.data as DashboardStats
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch dashboard stats')
+    }
+  },
+  {
+    condition: (force, { getState }) => {
+      const { entries } = getState() as { entries: { dashboardStatsLoading: boolean } }
+      return !entries.dashboardStatsLoading
+    },
   }
 )
 
@@ -128,6 +208,22 @@ export const fetchUserProjects = createAsyncThunk(
   }
 )
 
+export const fetchTopicSummary = createAsyncThunk(
+  'entries/fetchTopicSummary',
+  async (params: TopicSummaryParams = {}, { rejectWithValue }) => {
+    try {
+      // Filter out undefined values to avoid sending them as query params
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v !== undefined)
+      )
+      const response = await api.get('/entries/topic_summary/', { params: cleanParams })
+      return response.data as TopicSummaryResponse
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch topic summary')
+    }
+  }
+)
+
 const entriesSlice = createSlice({
   name: 'entries',
   initialState,
@@ -159,6 +255,7 @@ const entriesSlice = createSlice({
       .addCase(fetchEntries.fulfilled, (state, action) => {
         state.entries = action.payload
         state.isLoading = false
+        state.lastFetched = Date.now()
       })
       .addCase(fetchEntries.rejected, (state, action) => {
         state.isLoading = false
@@ -211,6 +308,28 @@ const entriesSlice = createSlice({
       // Fetch User Projects
       .addCase(fetchUserProjects.fulfilled, (state, action) => {
         state.userProjects = action.payload
+      })
+      // Dashboard Stats
+      .addCase(fetchDashboardStats.pending, (state) => {
+        state.dashboardStatsLoading = true
+      })
+      .addCase(fetchDashboardStats.fulfilled, (state, action) => {
+        state.dashboardStats = action.payload
+        state.dashboardStatsLoading = false
+      })
+      .addCase(fetchDashboardStats.rejected, (state) => {
+        state.dashboardStatsLoading = false
+      })
+      // Topic Summary
+      .addCase(fetchTopicSummary.pending, (state) => {
+        state.topicSummaryLoading = true
+      })
+      .addCase(fetchTopicSummary.fulfilled, (state, action) => {
+        state.topicSummary = action.payload
+        state.topicSummaryLoading = false
+      })
+      .addCase(fetchTopicSummary.rejected, (state) => {
+        state.topicSummaryLoading = false
       })
   },
 })

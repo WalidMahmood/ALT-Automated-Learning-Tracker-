@@ -36,7 +36,7 @@ export default function AdminEntriesPage() {
   const dispatch = useAppDispatch()
 
   useEffect(() => {
-    dispatch(fetchEntries({}))
+    dispatch(fetchEntries({ page_size: 500 })) // Paginated fetch for performance
     dispatch(fetchTopics())
     dispatch(fetchUsers())
   }, [dispatch])

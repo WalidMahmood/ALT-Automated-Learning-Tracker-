@@ -17,6 +17,14 @@ class TrainingPlan(models.Model):
         default=False,
         help_text="Soft delete flag - True means archived"
     )
+    source_template = models.CharField(
+        max_length=100, null=True, blank=True,
+        help_text="ID of the roadmap template this plan was created from"
+    )
+    target_role = models.CharField(
+        max_length=255, null=True, blank=True,
+        help_text="Target role (e.g., Frontend Developer)"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -66,6 +74,12 @@ class PlanTopic(models.Model):
         decimal_places=1,
         help_text="Custom hours for this topic in this plan"
     )
+    node_type = models.CharField(
+        max_length=20,
+        default='topic',
+        choices=[('topic', 'Topic'), ('section', 'Section Header')],
+        help_text="Type of node in the roadmap graph"
+    )
 
     class Meta:
         ordering = ['sequence_order']
@@ -107,3 +121,34 @@ class PlanAssignment(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.plan.plan_name}"
+
+
+class PlanTopicEdge(models.Model):
+    """
+    Directed edge between two topics within a training plan.
+    Represents prerequisite flow: source_topic -> target_topic.
+    Used to render the roadmap graph view.
+    """
+    plan = models.ForeignKey(
+        TrainingPlan,
+        on_delete=models.CASCADE,
+        related_name='edges'
+    )
+    source_topic = models.ForeignKey(
+        Topic,
+        on_delete=models.CASCADE,
+        related_name='outgoing_edges'
+    )
+    target_topic = models.ForeignKey(
+        Topic,
+        on_delete=models.CASCADE,
+        related_name='incoming_edges'
+    )
+
+    class Meta:
+        unique_together = ['plan', 'source_topic', 'target_topic']
+        verbose_name = 'Plan Topic Edge'
+        verbose_name_plural = 'Plan Topic Edges'
+
+    def __str__(self):
+        return f"{self.plan.plan_name}: {self.source_topic.name} -> {self.target_topic.name}"

@@ -19,13 +19,19 @@ const initialState: LeaveRequestsState = {
 // Async Thunks
 export const fetchLeaveRequests = createAsyncThunk(
   'leaveRequests/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (force: boolean = false, { rejectWithValue }) => {
     try {
       const response = await api.get('/leaves/requests/')
       return Array.isArray(response.data) ? response.data : response.data.results
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch leaves')
     }
+  },
+  {
+    condition: (force, { getState }) => {
+      const { leaveRequests } = getState() as { leaveRequests: LeaveRequestsState }
+      return !leaveRequests.isLoading
+    },
   }
 )
 

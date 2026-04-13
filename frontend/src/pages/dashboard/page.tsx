@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -67,7 +67,7 @@ import type {
 import { OverrideModal } from '@/components/admin/override-modal'
 import { mockUsers } from '@/lib/mock-data'
 
-import { fetchEntries } from '@/lib/store/slices/entriesSlice'
+import { fetchEntries, fetchDashboardStats, fetchTopicSummary, type DashboardStats, type TopicSummaryParams } from '@/lib/store/slices/entriesSlice'
 import { fetchTopics } from '@/lib/store/slices/topicsSlice'
 import { fetchTrainingPlans, fetchUserAssignments } from '@/lib/store/slices/trainingPlansSlice'
 import { fetchUsers } from '@/lib/store/slices/usersSlice'
@@ -81,26 +81,35 @@ export default function DashboardPage() {
 
   const isAdmin = useAppSelector((state) => state.auth.user?.role === 'admin')
 
+  // Fire all fetches immediately - Redux deduplication prevents duplicates
+  // Page renders instantly while data loads in background
   useEffect(() => {
-    dispatch(fetchEntries({}))
-    dispatch(fetchTopics())
-    dispatch(fetchTrainingPlans())
-    dispatch(fetchLeaveRequests())
-    dispatch(fetchUserAssignments())
-
     if (isAdmin) {
-      dispatch(fetchUsers())
-      dispatch(fetchAllProjects({}))
+      // Admin: ONLY fetch lightweight dashboardStats on mount for instant render
+      dispatch(fetchDashboardStats(false))
+      dispatch(fetchTopicSummary({ page: 1, page_size: 10 }))
+      dispatch(fetchTrainingPlans(false))
+      dispatch(fetchLeaveRequests(false))
+      dispatch(fetchUserAssignments(false))
+      dispatch(fetchUsers(false))
+      // Topics + Entries lazy-loaded when drill-down sections mount (deferred)
+    } else {
+      // Learner: Fetch entries + metadata
+      dispatch(fetchTopics(false))
+      dispatch(fetchEntries({ page_size: 500 }))
+      dispatch(fetchTrainingPlans(false))
+      dispatch(fetchLeaveRequests(false))
+      dispatch(fetchUserAssignments(false))
     }
   }, [dispatch, isAdmin])
 
-  // Auto-refresh polling for admin - refetch entries every 5 seconds for real-time updates
+  // Lightweight polling for admin — only refresh stats every 30 seconds
   useEffect(() => {
     if (!isAdmin) return
 
     const intervalId = setInterval(() => {
-      dispatch(fetchEntries({}))
-    }, 5000) // Poll every 5 seconds
+      dispatch(fetchDashboardStats(true))
+    }, 30000) // Poll every 30 seconds (was 5s with full entries)
 
     return () => clearInterval(intervalId)
   }, [dispatch, isAdmin])
@@ -110,7 +119,7 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { user } = useAppSelector((state) => state.auth)
-  const { entries } = useAppSelector((state) => state.entries)
+  const { entries, dashboardStats } = useAppSelector((state) => state.entries)
   const { topics } = useAppSelector((state) => state.topics)
   const { users } = useAppSelector((state) => state.users)
   const { requests: leaveRequests } = useAppSelector((state) => state.leaveRequests)
@@ -119,31 +128,26 @@ function DashboardContent() {
 
   const isAdmin = user?.role === 'admin'
 
-  // Calculate stats
+  // Calculate stats — use server-side dashboardStats for admin, client-side for learner
   const stats = useMemo(() => {
-    if (isAdmin) {
-      const allEntries = Array.isArray(entries) ? entries : []
-      const flagged = allEntries.filter((e) => e.status === 'flagged' || e.status === 'rejected').length
-      const approved = allEntries.filter((e) => e.status === 'approved').length
-      // "Needs Review" = AI finished analyzing but decision is 'pending' (low confidence, needs human)
-      const needsReview = allEntries.filter((e) => e.status === 'pending' && e.ai_status === 'analyzed').length
-      // "Processing" = AI hasn't analyzed yet (still in pipeline or queued)
-      const processing = allEntries.filter((e) => e.status === 'pending' && e.ai_status !== 'analyzed').length
-      // "Error" = AI analysis failed (connection issues, timeouts, etc.)
-      const error = allEntries.filter((e) => e.ai_status === 'error').length
-      const pendingLeaves = (Array.isArray(leaveRequests) ? leaveRequests : []).filter((l) => l.status === 'approved').length
-      const totalLearners = (Array.isArray(users) ? users : []).filter((u) => u.role === 'learner' && u.is_active).length
-      const totalHours = allEntries.reduce((sum, e) => sum + parseFloat(e.hours as any), 0)
-
+    if (isAdmin && dashboardStats) {
+      // Use server-computed stats — no client-side processing needed!
       return {
-        needsReview,
-        processing,
-        error,
-        flagged,
-        approved,
-        pendingLeaves,
-        totalLearners,
-        totalHours,
+        needsReview: dashboardStats.counts.needsReview,
+        processing: dashboardStats.counts.processing,
+        error: dashboardStats.counts.error,
+        flagged: dashboardStats.counts.flagged,
+        approved: dashboardStats.counts.approved,
+        pendingLeaves: dashboardStats.counts.pendingLeaves,
+        totalLearners: dashboardStats.counts.totalLearners,
+        totalHours: dashboardStats.counts.totalHours,
+      }
+    }
+    if (isAdmin) {
+      // Show zeros while data loads (will update instantly when data arrives)
+      return {
+        needsReview: 0, processing: 0, error: 0, flagged: 0, approved: 0,
+        pendingLeaves: 0, totalLearners: 0, totalHours: 0,
       }
     }
 
@@ -161,7 +165,7 @@ function DashboardContent() {
       totalHours,
       totalEntries: userEntries.length,
     }
-  }, [isAdmin, entries, leaveRequests, users, user?.id])
+  }, [isAdmin, entries, leaveRequests, users, user?.id, dashboardStats])
 
   return (
     <div className="space-y-6">
@@ -183,6 +187,7 @@ function DashboardContent() {
           topics={topics}
           users={users}
           projects={projects}
+          dashboardStats={dashboardStats}
         />
       ) : (
         <LearnerDashboard
@@ -198,19 +203,24 @@ function DashboardContent() {
   )
 }
 
-function AdminDashboard({
+const AdminDashboard = React.memo(function AdminDashboard({
   stats,
   entries,
   topics,
   users,
   projects,
+  dashboardStats,
 }: {
   stats: any,
   entries: Entry[],
   topics: Topic[],
   users: User[],
   projects: Project[],
+  dashboardStats: DashboardStats | null,
 }) {
+  const dispatch = useAppDispatch()
+  const { dashboardStatsLoading, isLoading: entriesLoading, topicSummary, topicSummaryLoading } = useAppSelector((state) => state.entries)
+
   // In-place Drill-down State
   const [drillLevel, setDrillLevel] = useState(0) // 0: Topics, 1: Entries, 2: Details
   const [selectedTopic, setSelectedTopic] = useState<{ id: number, name: string } | null>(null)
@@ -219,7 +229,6 @@ function AdminDashboard({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
 
   // Level 1: Topic Entries list
-  const [topicEntriesPageSize, setTopicEntriesPageSize] = useState(50)
   const [topicEntriesSort, setTopicEntriesSort] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
   const [entriesStatusFilter, setEntriesStatusFilter] = useState<'all' | 'pending' | 'needs_review' | 'processing' | 'error' | 'flagged' | 'approved'>('all')
   const [entriesSearchQuery, setEntriesSearchQuery] = useState('')
@@ -227,6 +236,11 @@ function AdminDashboard({
   const [entriesMaxHours, setEntriesMaxHours] = useState(0)
   const [entriesStartDate, setEntriesStartDate] = useState('')
   const [entriesEndDate, setEntriesEndDate] = useState('')
+  const [entriesPage, setEntriesPage] = useState(1)
+  const entriesItemsPerPage = 10
+
+  // Derive activeFilter from entriesStatusFilter for card highlighting
+  const activeFilter = entriesStatusFilter
 
   const openFilteredEntries = (statusFilter: 'all' | 'pending' | 'needs_review' | 'processing' | 'error' | 'flagged' | 'approved') => {
     setSelectedTopic(null)
@@ -259,13 +273,23 @@ function AdminDashboard({
     }
   }
 
-  // Helper: Recursive descendant IDs
-  const getDescendantIds = (topicId: number): number[] => {
+  // Helper: Recursive descendant IDs (MEMOIZED to avoid repeated tree traversals)
+  const descendantCache = useMemo(() => new Map<number, number[]>(), [topics])
+  
+  const getDescendantIds = useCallback((topicId: number): number[] => {
+    // Check cache first
+    if (descendantCache.has(topicId)) {
+      return descendantCache.get(topicId)!
+    }
+    
     const children = topics.filter(t => t.parent_id === topicId)
-    return children.reduce((acc, child) => {
+    const result = children.reduce((acc, child) => {
       return [...acc, child.id, ...getDescendantIds(child.id)]
     }, [] as number[])
-  }
+    
+    descendantCache.set(topicId, result)
+    return result
+  }, [topics, descendantCache])
 
   // Helper: Topic path breadcrumb
   const getTopicPath = (topicId: number): string => {
@@ -280,75 +304,59 @@ function AdminDashboard({
   // Sorting and Filtering states for Level 0 (Topics)
   const [topicFilter, setTopicFilter] = useState('')
   const [topicSort, setTopicSort] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null) // Default: null (triggers Last Created sort)
-  const [topicPageSize, setTopicPageSize] = useState(50)
   const [topicFlaggedFilter, setTopicFlaggedFilter] = useState<'all' | 'has_flagged' | 'no_flagged'>('all')
   const [topicMinEntries, setTopicMinEntries] = useState(0)
+  const [topicPage, setTopicPage] = useState(1)
+  const topicItemsPerPage = 10
 
-  // Level 0: Topic analytics (ROOT LEVEL ONLY with aggregation)
-  const topicStats = useMemo(() => {
-    // Only show topics that are top-level parents (root)
-    const rootTopics = topics.filter(t => t.parent_id === null)
-
-    let results = rootTopics.map(root => {
-      const familyIds = [root.id, ...getDescendantIds(root.id)]
-      const familyEntries = entries.filter(e => e.topic !== null && familyIds.includes(e.topic))
-
-      return {
-        id: root.id,
-        name: root.name,
-        created_at: root.created_at || new Date().toISOString(),
-        entries: familyEntries.length,
-        hours: familyEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0),
-        flagged: familyEntries.filter(e => e.status === 'flagged' || e.status === 'rejected').length,
-        userCount: new Set(familyEntries.map(e => e.user)).size
-      }
-    })
-
-    // Apply search filter
-    if (topicFilter) {
-      results = results.filter((t) => t.name.toLowerCase().includes(topicFilter.toLowerCase()))
+  // LAZY LOAD: Only fetch entries + topics when user drills into entries (drillLevel > 0)
+  // Dashboard shows only dashboardStats cards + server-side topic_summary - super fast!
+  useEffect(() => {
+    if (drillLevel > 0 && entries.length === 0 && !entriesLoading) {
+      dispatch(fetchEntries({ page_size: 500 }))
     }
-
-    // Apply flagged filter
-    if (topicFlaggedFilter === 'has_flagged') {
-      results = results.filter((t) => t.flagged > 0)
-    } else if (topicFlaggedFilter === 'no_flagged') {
-      results = results.filter((t) => t.flagged === 0)
+    if (drillLevel > 0 && topics.length === 0) {
+      dispatch(fetchTopics(false))
     }
+  }, [drillLevel, entries.length, topics.length, entriesLoading, dispatch])
 
-    // Apply minimum entries filter
-    if (topicMinEntries > 0) {
-      results = results.filter((t) => t.entries >= topicMinEntries)
+  // Level 0: Server-side topic summary — dispatched when filters/sort/page change
+  useEffect(() => {
+    if (drillLevel !== 0) return
+    const params: TopicSummaryParams = {
+      page: topicPage,
+      page_size: topicItemsPerPage,
+      search: topicFilter || undefined,
+      flagged: topicFlaggedFilter !== 'all' ? topicFlaggedFilter : undefined,
+      min_entries: topicMinEntries > 0 ? topicMinEntries : undefined,
+      sort: topicSort?.key || undefined,
+      order: topicSort?.direction || undefined,
     }
+    dispatch(fetchTopicSummary(params))
+  }, [dispatch, drillLevel, topicPage, topicFilter, topicSort, topicFlaggedFilter, topicMinEntries])
 
-    // Apply sorting
-    if (topicSort) {
-      results.sort((a, b) => {
-        // @ts-ignore
-        const aVal = a[topicSort.key]
-        // @ts-ignore
-        const bVal = b[topicSort.key]
-        if (aVal < bVal) return topicSort.direction === 'asc' ? -1 : 1
-        if (aVal > bVal) return topicSort.direction === 'asc' ? 1 : -1
-        return 0
-      })
-    } else {
-      // Default: Sort by Last Created (Newest First) using created_at
-      results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    }
+  // Reset page when filters change
+  useEffect(() => { setTopicPage(1) }, [topicFilter, topicFlaggedFilter, topicMinEntries])
 
-    return results.slice(0, topicPageSize)
-  }, [entries, topics, topicFilter, topicSort, topicPageSize, topicFlaggedFilter, topicMinEntries])
+  // Derived from server response
+  const paginatedTopicStats = topicSummary?.results || []
+  const topicTotalCount = topicSummary?.count || 0
+  const topicTotalPages = Math.max(1, Math.ceil(topicTotalCount / topicItemsPerPage))
 
   // Level 1: Filtered entries for selected topic (+ descendants) OR pending/flagged entries
   const currentTopicEntries = useMemo(() => {
+    // FAST PATH: Skip if not in drill-down view
+    if (drillLevel !== 1) {
+      return []
+    }
+
     let results: Entry[] = []
 
     if (selectedTopic) {
       // Include selected topic AND all its children
       const familyIds = [selectedTopic.id, ...getDescendantIds(selectedTopic.id)]
       results = entries.filter(e => e.topic !== null && familyIds.includes(e.topic))
-    } else if (drillLevel === 1) {
+    } else {
       // Show all entries when no topic is selected (status filter handles narrowing)
       results = [...entries]
     }
@@ -406,8 +414,12 @@ function AdminDashboard({
       })
     }
 
-    return results.slice(0, topicEntriesPageSize)
-  }, [entries, selectedTopic, drillLevel, entriesStatusFilter, entriesSearchQuery, entriesMinHours, entriesMaxHours, entriesStartDate, entriesEndDate, topicEntriesSort, topicEntriesPageSize])
+    return results
+  }, [entries, selectedTopic, drillLevel, entriesStatusFilter, entriesSearchQuery, entriesMinHours, entriesMaxHours, entriesStartDate, entriesEndDate, topicEntriesSort])
+
+  const entriesTotalPages = Math.max(1, Math.ceil(currentTopicEntries.length / entriesItemsPerPage))
+  const paginatedCurrentEntries = currentTopicEntries.slice((entriesPage - 1) * entriesItemsPerPage, entriesPage * entriesItemsPerPage)
+  useEffect(() => { setEntriesPage(1) }, [entriesStatusFilter, entriesSearchQuery, entriesMinHours, entriesMaxHours, entriesStartDate, entriesEndDate, selectedTopic])
 
   // Calculate effective benchmark for a topic (sum of children's benchmarks if parent, or direct benchmark if leaf)
   const calculateEffectiveBenchmark = (topicId: number): number => {
@@ -444,6 +456,44 @@ function AdminDashboard({
     setTopicEntriesSort({ key, direction })
   }
 
+  // ═══ Premium Analytics Computations ═══
+  const totalEntries = dashboardStats ? dashboardStats.counts.total : entries.length
+
+  // Use server-side stats for analytics — no expensive client-side computation!
+  const weeklyData = useMemo(() => {
+    if (dashboardStats) return dashboardStats.weeklyActivity
+    return []
+  }, [dashboardStats])
+
+  const avgConfidence = dashboardStats ? dashboardStats.avgConfidence : 0
+
+  // Memoize legend items to avoid recreating array on every render
+  const legendItems = useMemo(() => [
+    { label: 'Approved', value: stats.approved, color: 'bg-emerald-500' },
+    { label: 'Flagged', value: stats.flagged, color: 'bg-red-500' },
+    { label: 'Review', value: stats.needsReview, color: 'bg-amber-500' },
+  ].filter(item => item.value > 0), [stats.approved, stats.flagged, stats.needsReview])
+
+  // Memoize donut segments to avoid recalculating on every render
+  const donutSegments = useMemo(() => {
+    const total = Math.max(1, totalEntries)
+    const segments = [
+      { value: stats.approved, color: '#22c55e', label: 'Approved' },
+      { value: stats.flagged, color: '#ef4444', label: 'Flagged' },
+      { value: stats.needsReview, color: '#f59e0b', label: 'Review' },
+    ].filter(seg => seg.value > 0)
+    
+    let offset = 0
+    return segments.map((seg, i) => {
+      const pct = (seg.value / total) * 100
+      const segment = { ...seg, pct, offset, index: i }
+      offset += pct
+      return segment
+    })
+  }, [stats.approved, stats.flagged, stats.needsReview, totalEntries])
+
+
+
   return (
     <>
       <OverrideModal
@@ -456,162 +506,471 @@ function AdminDashboard({
         }}
       />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+
+      {/* ═══ Visual Analytics Section — 3 cards in one row ═══ */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* SVG Donut Chart — Entry Distribution */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CircleDot className="h-4 w-4 text-violet-500" />
+              Entry Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center gap-6">
+              <div className="relative h-[180px] w-[180px]">
+                <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                  {donutSegments.map((seg) => (
+                    <circle key={seg.index} cx="18" cy="18" r="15.9155" fill="none"
+                      stroke={seg.color} strokeWidth="3.8"
+                      strokeDasharray={`${seg.pct} ${100 - seg.pct}`}
+                      strokeDashoffset={`${-seg.offset}`}
+                      className="transition-all duration-700"
+                      style={{
+                        animation: `donut-segment-fade 0.6s ease-out ${seg.index * 0.08}s both`
+                      }}
+                    />
+                  ))}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-700 delay-300">
+                  <span className="text-3xl font-bold">{totalEntries}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Total</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {legendItems.map((item, i) => (
+                  <div 
+                    key={i} 
+                    className="flex items-center gap-2 text-xs animate-in fade-in slide-in-from-right-2 duration-500"
+                    style={{ animationDelay: `${300 + i * 80}ms` }}
+                  >
+                    <div className={cn("h-2.5 w-2.5 rounded-full", item.color)} />
+                    <span className="text-muted-foreground w-16">{item.label}</span>
+                    <span className="font-bold tabular-nums">{item.value}</span>
+                    <span className="text-muted-foreground/60">({totalEntries > 0 ? Math.round((item.value / totalEntries) * 100) : 0}%)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Weekly Activity Bar Chart */}
+        <Card className="shadow-sm border-blue-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              Weekly Activity
+            </CardTitle>
+            <CardDescription>Last 7 days — stacked by status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[180px] flex items-end justify-between gap-2 pb-6 pt-2 px-2">
+              {weeklyData.map((day, i) => {
+                const total = day.approved + day.pending + day.flagged
+                const maxTotal = Math.max(1, ...weeklyData.map(d => d.approved + d.pending + d.flagged))
+                const heightPct = (total / maxTotal) * 100
+                return (
+                  <div key={i} className="flex flex-col items-center w-full h-full justify-end group">
+                    <span className="text-[10px] font-bold text-muted-foreground mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">{total}</span>
+                    <div className="w-full rounded-t-md overflow-hidden relative" style={{ height: `${heightPct}%`, minHeight: total > 0 ? '4px' : '0' }}>
+                      {day.approved > 0 && <div className="bg-emerald-500 w-full" style={{ height: `${(day.approved / Math.max(1, total)) * 100}%` }} />}
+                      {day.pending > 0 && <div className="bg-amber-400 w-full" style={{ height: `${(day.pending / Math.max(1, total)) * 100}%` }} />}
+                      {day.flagged > 0 && <div className="bg-red-500 w-full" style={{ height: `${(day.flagged / Math.max(1, total)) * 100}%` }} />}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-medium mt-1.5">{day.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground font-medium pt-1 border-t">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" /> Approved</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400 inline-block" /> Pending</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" /> Flagged</span>
+            </div>
+          </CardContent>
+        </Card>
+        {/* AI Pipeline Health Gauge */}
+        <Card className="shadow-sm bg-gradient-to-br from-background to-muted/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Brain className="h-4 w-4 text-violet-500" />
+              AI Pipeline Health
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent tabular-nums">
+                  {avgConfidence.toFixed(1)}%
+                </p>
+                <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Avg Confidence</p>
+              </div>
+              <div className="relative h-20 w-20">
+                <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/30" />
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="url(#gaugeGrad)" strokeWidth="3"
+                    strokeDasharray={`${avgConfidence} ${100 - avgConfidence}`}
+                    strokeLinecap="round" className="transition-all duration-1000" />
+                  <defs><linearGradient id="gaugeGrad"><stop offset="0%" stopColor="#8b5cf6" /><stop offset="100%" stopColor="#3b82f6" /></linearGradient></defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Zap className="h-5 w-5 text-violet-500" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-medium">
+                  <span className="text-emerald-600">Approval Rate</span>
+                  <span className="tabular-nums">{totalEntries > 0 ? Math.round((stats.approved / totalEntries) * 100) : 0}%</span>
+                </div>
+                <Progress value={totalEntries > 0 ? (stats.approved / totalEntries) * 100 : 0} className="h-2 [&>div]:bg-emerald-500" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-medium">
+                  <span className="text-red-500">Flag Rate</span>
+                  <span className="tabular-nums">{totalEntries > 0 ? Math.round((stats.flagged / totalEntries) * 100) : 0}%</span>
+                </div>
+                <Progress value={totalEntries > 0 ? (stats.flagged / totalEntries) * 100 : 0} className="h-2 [&>div]:bg-red-500" />
+              </div>
+              <div className="flex items-center justify-between text-xs pt-1 border-t">
+                <span className="text-muted-foreground">Total Hours Logged</span>
+                <span className="font-bold text-sm tabular-nums">{Number(stats.totalHours || 0).toFixed(1)}h</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ═══ Premium Stats Cards ═══ */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
         <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full", stats.approved > 0 && 'border-success')}
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-success group relative overflow-hidden",
+            activeFilter === 'approved' && 'bg-success/5 shadow-md')}
           onClick={() => openFilteredEntries('approved')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">{stats.approved}</div>
-            <p className="text-xs text-muted-foreground">AI / admin approved</p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full", stats.flagged > 0 && 'border-destructive')}
-          onClick={() => openFilteredEntries('flagged')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Flagged</CardTitle>
-            <Flag className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.flagged}</div>
-            <p className="text-xs text-muted-foreground">Needs attention</p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full", stats.error > 0 && 'border-red-500')}
-          onClick={() => openFilteredEntries('error')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Error</CardTitle>
-            <XCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className={cn("text-2xl font-bold", stats.error > 0 ? "text-red-500" : "")}>
-              {stats.error}
+          {dashboardStatsLoading && (
+            <div className="absolute top-2 right-2 z-20">
+              <Loader2 className="h-3 w-3 text-muted-foreground/40 animate-spin" />
             </div>
-            <p className="text-xs text-muted-foreground">AI analysis failed</p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full", stats.needsReview > 0 && 'border-orange-400')}
-          onClick={() => openFilteredEntries('needs_review')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Needs Review</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className={cn("text-2xl font-bold", stats.needsReview > 0 ? "text-orange-500" : "")}>
-              {stats.needsReview}
+          )}
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <CheckCircle2 className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Approved</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent tabular-nums">{stats.approved}</div>
+              </div>
+              <div className="p-2 bg-success/10 rounded-md group-hover:bg-success/20 transition-colors">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">AI uncertain — human decision needed</p>
+            <p className="text-xs text-muted-foreground/80 font-medium">AI processed successfully</p>
           </CardContent>
         </Card>
 
         <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full")}
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-amber-500 group relative overflow-hidden",
+            activeFilter === 'processing' && 'bg-amber-500/5 shadow-md')}
           onClick={() => openFilteredEntries('processing')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Processing</CardTitle>
-            <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-muted-foreground">
-              {stats.processing}
+          {dashboardStatsLoading && (
+            <div className="absolute top-2 right-2 z-20">
+              <Loader2 className="h-3 w-3 text-muted-foreground/40 animate-spin" />
             </div>
-            <p className="text-xs text-muted-foreground">In AI analysis pipeline</p>
+          )}
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <Loader2 className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Analyzing</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent tabular-nums">{stats.processing}</div>
+              </div>
+              <div className="p-2 bg-amber-500/10 rounded-md group-hover:bg-amber-500/20 transition-colors">
+                <Loader2 className="h-5 w-5 text-amber-500 animate-[spin_3s_linear_infinite]" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Pending AI engine</p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-blue-500 group relative overflow-hidden",
+            activeFilter === 'needs_review' && 'bg-blue-500/5 shadow-md')}
+          onClick={() => openFilteredEntries('needs_review')}
+        >
+          {dashboardStatsLoading && (
+            <div className="absolute top-2 right-2 z-20">
+              <Loader2 className="h-3 w-3 text-muted-foreground/40 animate-spin" />
+            </div>
+          )}
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <Eye className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Review</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent tabular-nums">{stats.needsReview}</div>
+              </div>
+              <div className="p-2 bg-blue-500/10 rounded-md group-hover:bg-blue-500/20 transition-colors">
+                <Eye className="h-5 w-5 text-blue-500" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Needs human review</p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-destructive group relative overflow-hidden",
+            activeFilter === 'flagged' && 'bg-destructive/5 shadow-md')}
+          onClick={() => openFilteredEntries('flagged')}
+        >
+          {dashboardStatsLoading && (
+            <div className="absolute top-2 right-2 z-20">
+              <Loader2 className="h-3 w-3 text-muted-foreground/40 animate-spin" />
+            </div>
+          )}
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <Flag className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Flagged</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent tabular-nums">{stats.flagged}</div>
+              </div>
+              <div className="p-2 bg-destructive/10 rounded-md group-hover:bg-destructive/20 transition-colors">
+                <Flag className="h-5 w-5 text-destructive" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Requires Admin override</p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-red-500 group relative overflow-hidden",
+            activeFilter === 'error' && 'bg-red-500/5 shadow-md')}
+          onClick={() => openFilteredEntries('error')}
+        >
+          {dashboardStatsLoading && (
+            <div className="absolute top-2 right-2 z-20">
+              <Loader2 className="h-3 w-3 text-muted-foreground/40 animate-spin" />
+            </div>
+          )}
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <XCircle className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Error</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-red-600 to-red-400 bg-clip-text text-transparent tabular-nums">{stats.error}</div>
+              </div>
+              <div className="p-2 bg-red-500/10 rounded-md group-hover:bg-red-500/20 transition-colors">
+                <XCircle className="h-5 w-5 text-red-500" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Pipeline crash / timeout</p>
           </CardContent>
         </Card>
 
         <Link to="/admin/users">
-          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Learners</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalLearners}</div>
-              <p className="text-xs text-muted-foreground">Currently enrolled</p>
+          <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-violet-500 group relative overflow-hidden h-full">
+            {dashboardStatsLoading && (
+              <div className="absolute top-2 right-2 z-20">
+                <Loader2 className="h-3 w-3 text-muted-foreground/40 animate-spin" />
+              </div>
+            )}
+            <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+              <Users className="h-24 w-24" />
+            </div>
+            <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+              <div className="flex justify-between items-start mb-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Learners</p>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent tabular-nums">{stats.totalLearners}</div>
+                </div>
+                <div className="p-2 bg-violet-500/10 rounded-md group-hover:bg-violet-500/20 transition-colors">
+                  <Users className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground/80 font-medium">Total active members</p>
             </CardContent>
           </Card>
         </Link>
       </div>
 
-      {/* Main Content - Dynamic Drill-down Table */}
-      <Card className="col-span-full shadow-md">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-6">
-          <div className="flex items-center gap-3">
-            {drillLevel > 0 && (
+      {/* Entries Summary - Topic Overview Table (shown when drillLevel === 0) */}
+      {drillLevel === 0 && (
+        <Card className="col-span-full shadow-md">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-6">
+            <div>
+              <CardTitle className="text-xl">Entries Summary</CardTitle>
+              <CardDescription>View learning activities by topic</CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <Select key="topic-flagged-filter" value={topicFlaggedFilter} onValueChange={(v) => setTopicFlaggedFilter(v as 'all' | 'has_flagged' | 'no_flagged')} defaultValue="all">
+                <SelectTrigger className="w-[150px] h-9">
+                  <SelectValue placeholder="All Topics" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Topics</SelectItem>
+                  <SelectItem value="has_flagged">Has Flagged</SelectItem>
+                  <SelectItem value="no_flagged">No Flagged</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                placeholder="Min Entries"
+                value={topicMinEntries || ''}
+                onChange={e => setTopicMinEntries(parseInt(e.target.value) || 0)}
+                className="w-[120px] h-9"
+                min="0"
+              />
+              <Badge variant="outline" className="h-9 px-3 flex items-center text-xs">
+                {topicTotalCount} topic{topicTotalCount !== 1 ? 's' : ''}
+              </Badge>
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search topics..."
+                  value={topicFilter}
+                  onChange={e => setTopicFilter(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="rounded-lg border overflow-hidden shadow-sm">
+              <Table>
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead
+                      className="py-3 h-11 text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => requestTopicSort('name')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Topic Name
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="py-3 h-11 text-center text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => requestTopicSort('entries')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Entries
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="py-3 h-11 text-center text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => requestTopicSort('userCount')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Users
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topicSummaryLoading && paginatedTopicStats.length === 0 ? (
+                    // Loading skeleton
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="py-4">
+                          <div className="h-4 bg-muted animate-pulse rounded w-3/4"></div>
+                        </TableCell>
+                        <TableCell className="py-4 text-center">
+                          <div className="h-4 bg-muted animate-pulse rounded w-12 mx-auto"></div>
+                        </TableCell>
+                        <TableCell className="py-4 text-center">
+                          <div className="h-4 bg-muted animate-pulse rounded w-12 mx-auto"></div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    paginatedTopicStats.map((topic) => (
+                      <TableRow
+                        key={topic.id}
+                        className="cursor-pointer hover:bg-muted/30 transition-colors group"
+                        onClick={() => openTopicEntries(topic.id, topic.name)}
+                      >
+                        <TableCell className="py-4 font-medium text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="group-hover:text-primary transition-colors text-primary font-semibold">{topic.name}</span>
+                            {topic.flagged > 0 && (
+                              <Badge variant="destructive" className="h-5 px-1.5 text-xs font-bold">
+                                {topic.flagged} FLAGGED
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 text-center font-mono text-sm">{topic.entries}</TableCell>
+                        <TableCell className="py-4 text-center font-mono text-sm">{topic.userCount}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            {topicTotalCount === 0 && !topicSummaryLoading && (
+              <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg mt-2 bg-muted/10">
+                <Search className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground text-sm font-medium">No results found for "{topicFilter}"</p>
+                <Button variant="link" size="sm" onClick={() => setTopicFilter('')} className="mt-1">Clear filters</Button>
+              </div>
+            )}
+            {topicTotalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 mt-2">
+                <p className="text-xs text-muted-foreground">
+                  Showing {(topicPage - 1) * topicItemsPerPage + 1}–{Math.min(topicPage * topicItemsPerPage, topicTotalCount)} of {topicTotalCount}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-7 w-7" disabled={topicPage <= 1} onClick={() => setTopicPage(topicPage - 1)}>
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                  <span className="text-xs px-2 tabular-nums">Page {topicPage} of {topicTotalPages}</span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" disabled={topicPage >= topicTotalPages} onClick={() => setTopicPage(topicPage + 1)}>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Drill-down Table - Entry List and Details (shown when drillLevel > 0) */}
+      {drillLevel > 0 && (
+        <Card className="col-span-full shadow-md">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-6">
+            <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={goBack} className="h-9 w-9">
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-            )}
-            <div>
-              <CardTitle className="text-xl">
-                {drillLevel === 0 && "Entries Summary"}
-                {drillLevel === 1 && (selectedTopic ? `${selectedTopic.name} - Entries` : "Filtered Entries")}
-                {drillLevel === 2 && `Entry Details (#${selectedEntry?.id})`}
-              </CardTitle>
-              <CardDescription>
-                {drillLevel === 0 && "View learning activities by topic"}
-                {drillLevel === 1 && `Reviewing entries for ${selectedTopic?.name || 'filtered selection'}`}
-                {drillLevel === 2 && `Detailed view for entry by ${mockUsers.find(u => u.id === selectedEntry?.user)?.name}`}
-              </CardDescription>
+              <div>
+                <CardTitle className="text-xl">
+                  {drillLevel === 1 && (selectedTopic ? `${selectedTopic.name} - Entries` : "Filtered Entries")}
+                  {drillLevel === 2 && `Entry Details (#${selectedEntry?.id})`}
+                </CardTitle>
+                <CardDescription>
+                  {drillLevel === 1 && `Reviewing entries for ${selectedTopic?.name || 'filtered selection'}`}
+                  {drillLevel === 2 && `Detailed view for entry by ${mockUsers.find(u => u.id === selectedEntry?.user)?.name}`}
+                </CardDescription>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            {drillLevel === 0 && (
-              <>
-                <Select value={topicFlaggedFilter} onValueChange={(v) => setTopicFlaggedFilter(v as 'all' | 'has_flagged' | 'no_flagged')}>
-                  <SelectTrigger className="w-[150px] h-9">
-                    <SelectValue placeholder="Flagged Filter" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Topics</SelectItem>
-                    <SelectItem value="has_flagged">Has Flagged</SelectItem>
-                    <SelectItem value="no_flagged">No Flagged</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number"
-                  placeholder="Min Entries"
-                  value={topicMinEntries || ''}
-                  onChange={e => setTopicMinEntries(parseInt(e.target.value) || 0)}
-                  className="w-[120px] h-9"
-                  min="0"
-                />
-                <Select value={topicPageSize.toString()} onValueChange={(v) => setTopicPageSize(parseInt(v))}>
-                  <SelectTrigger className="w-[110px] h-9">
-                    <SelectValue placeholder="Show 50" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="50">Show 50</SelectItem>
-                    <SelectItem value="100">Show 100</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="relative flex-1 sm:w-64">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search topics..."
-                    value={topicFilter}
-                    onChange={e => setTopicFilter(e.target.value)}
-                    className="pl-9 h-9"
-                  />
-                </div>
-              </>
-            )}
-            {drillLevel === 1 && (
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              {drillLevel === 1 && (
               <>
                 <Select value={entriesStatusFilter} onValueChange={(v) => setEntriesStatusFilter(v as 'all' | 'pending' | 'needs_review' | 'processing' | 'error' | 'flagged' | 'approved')}>
                   <SelectTrigger className="w-[150px] h-9">
@@ -658,15 +1017,9 @@ function AdminDashboard({
                   onChange={e => setEntriesEndDate(e.target.value)}
                   className="w-[140px] h-9"
                 />
-                <Select value={topicEntriesPageSize.toString()} onValueChange={(v) => setTopicEntriesPageSize(parseInt(v))}>
-                  <SelectTrigger className="w-[110px] h-9">
-                    <SelectValue placeholder="Show 50" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="50">Show 50</SelectItem>
-                    <SelectItem value="100">Show 100</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Badge variant="outline" className="h-9 px-3 flex items-center text-xs">
+                  {currentTopicEntries.length} {currentTopicEntries.length === 1 ? 'entry' : 'entries'}
+                </Badge>
                 <div className="relative flex-1 sm:w-64">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -681,75 +1034,6 @@ function AdminDashboard({
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          {drillLevel === 0 && (
-            <>
-              <div className="rounded-lg border overflow-hidden shadow-sm">
-                <Table>
-                  <TableHeader className="bg-muted/40">
-                    <TableRow>
-                      <TableHead
-                        className="py-3 h-11 text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => requestTopicSort('name')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Topic Name
-                          <ArrowUpDown className="h-3 w-3" />
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="py-3 h-11 text-center text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => requestTopicSort('entries')}
-                      >
-                        <div className="flex items-center justify-center gap-1">
-                          Entries
-                          <ArrowUpDown className="h-3 w-3" />
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="py-3 h-11 text-center text-xs uppercase font-bold cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => requestTopicSort('userCount')}
-                      >
-                        <div className="flex items-center justify-center gap-1">
-                          Users
-                          <ArrowUpDown className="h-3 w-3" />
-                        </div>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {topicStats.map((topic) => (
-                      <TableRow
-                        key={topic.id}
-                        className="cursor-pointer hover:bg-muted/30 transition-colors group"
-                        onClick={() => openTopicEntries(topic.id, topic.name)}
-                      >
-                        <TableCell className="py-4 font-medium text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="group-hover:text-primary transition-colors text-primary font-semibold">{topic.name}</span>
-                            {topic.flagged > 0 && (
-                              <Badge variant="destructive" className="h-5 px-1.5 text-xs font-bold">
-                                {topic.flagged} FLAGGED
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4 text-center font-mono text-sm">{topic.entries}</TableCell>
-                        <TableCell className="py-4 text-center font-mono text-sm">{topic.userCount}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              {topicStats.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg mt-2 bg-muted/10">
-                  <Search className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm font-medium">No results found for "{topicFilter}"</p>
-                  <Button variant="link" size="sm" onClick={() => setTopicFilter('')} className="mt-1">Clear filters</Button>
-                </div>
-              )}
-            </>
-          )}
-
           {drillLevel === 1 && (
             <div className="rounded-lg border overflow-hidden shadow-sm">
               <Table>
@@ -774,7 +1058,7 @@ function AdminDashboard({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentTopicEntries.map((entry) => {
+                  {paginatedCurrentEntries.map((entry) => {
                     const user = users.find((u) => u.id === entry.user)
                     const entryTopic = topics.find(t => t.id === entry.topic)
                     let parentProgress = Math.round(Number(entry.progress_percent) || 0)
@@ -831,6 +1115,22 @@ function AdminDashboard({
               </Table>
               {currentTopicEntries.length === 0 && (
                 <div className="p-12 text-center text-muted-foreground">No entries found for this topic.</div>
+              )}
+              {entriesTotalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 mt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {(entriesPage - 1) * entriesItemsPerPage + 1}–{Math.min(entriesPage * entriesItemsPerPage, currentTopicEntries.length)} of {currentTopicEntries.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="icon" className="h-7 w-7" disabled={entriesPage <= 1} onClick={() => setEntriesPage(entriesPage - 1)}>
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </Button>
+                    <span className="text-xs px-2 tabular-nums">Page {entriesPage} of {entriesTotalPages}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" disabled={entriesPage >= entriesTotalPages} onClick={() => setEntriesPage(entriesPage + 1)}>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -1324,7 +1624,7 @@ function AdminDashboard({
                           </div>
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Difficulty</span>
-                            <span className="font-medium">{'★'.repeat(entryTopic.difficulty)}{'☆'.repeat(5 - entryTopic.difficulty)}</span>
+                            <span className="font-medium">{'★'.repeat(entryTopic.difficulty || 0)}{'☆'.repeat(5 - (entryTopic.difficulty || 0))}</span>
                           </div>
                         </>
                       ) : null
@@ -1535,6 +1835,7 @@ function AdminDashboard({
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Project Entries Section */}
       <AdminProjectsSection projects={projects} entries={entries} users={users} topics={topics} />
@@ -1575,7 +1876,7 @@ function AdminDashboard({
       </Card>
     </>
   )
-}
+})
 
 function AdminProjectsSection({
   projects,
@@ -1588,6 +1889,15 @@ function AdminProjectsSection({
   users: User[]
   topics: Topic[]
 }) {
+  const dispatch = useAppDispatch()
+
+  // Lazy-load projects (once only) - entries are now fetched on dashboard mount
+  useEffect(() => {
+    if (projects.length === 0) {
+      dispatch(fetchAllProjects({ force: false, page_size: 500 }))
+    }
+  }, [dispatch, projects.length])
+
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all')
   const [page, setPage] = useState(1)
@@ -1698,7 +2008,7 @@ function AdminProjectsSection({
                 </CardTitle>
                 <CardDescription>
                   {drillLevel === 0 && 'All projects across learners'}
-                  {drillLevel === 1 && `${projectEntries.length} entries by ${users.find(u => u.id === selectedProject?.user)?.name || 'Unknown'}`}
+                  {drillLevel === 1 && `${projectEntries.length} entries by ${users.find(u => u.id === selectedProject?.created_by)?.name || 'Unknown'}`}
                   {drillLevel === 2 && `Detailed view for entry by ${users.find(u => u.id === selectedEntry?.user)?.name}`}
                 </CardDescription>
               </div>
@@ -1759,7 +2069,7 @@ function AdminProjectsSection({
                       </TableHeader>
                       <TableBody>
                         {paginatedProjects.map((project) => {
-                          const owner = users.find((u) => u.id === project.user)
+                          const owner = users.find((u) => u.id === project.created_by)
                           const projectFlagged = entries.filter(e => e.project === project.id && (e.status === 'flagged' || e.status === 'rejected')).length
                           return (
                             <TableRow
@@ -1778,7 +2088,7 @@ function AdminProjectsSection({
                                 </div>
                               </TableCell>
                               <TableCell className="text-sm">
-                                {owner?.name || project.user_email || `User ${project.user}`}
+                                {owner?.name || project.created_by_email || `User ${project.created_by}`}
                               </TableCell>
                               <TableCell className="text-center">
                                 <Badge variant="outline" className="font-mono text-xs">
@@ -1983,7 +2293,7 @@ function AdminProjectsSection({
   )
 }
 
-function LearnerDashboard({
+const LearnerDashboard = React.memo(function LearnerDashboard({
   stats,
   user,
   entries,
@@ -2032,85 +2342,250 @@ function LearnerDashboard({
 
   return (
     <>
-      {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full",
-            activeFilter === 'approved' && 'ring-2 ring-success bg-success/5')}
-          onClick={() => toggleFilter('approved')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">{stats.approved}</div>
-            <p className="text-xs text-muted-foreground">Entries approved</p>
-          </CardContent>
-        </Card>
 
-        <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full",
-            activeFilter === 'analyzing' && 'ring-2 ring-amber-500 bg-amber-500/5')}
-          onClick={() => toggleFilter('analyzing')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Analyzing</CardTitle>
-            <Loader2 className="h-4 w-4 text-amber-500" />
+      {/* ═══ Learner Visual Analytics ═══ */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Approval Progress Ring + Stats */}
+        <Card className="col-span-1 lg:col-span-3 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Target className="h-4 w-4 text-emerald-500" />
+              Your Progress
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-500">{stats.analyzing}</div>
-            <p className="text-xs text-muted-foreground">AI processing</p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={cn("hover:bg-muted/50 transition-colors cursor-pointer h-full",
-            activeFilter === 'flagged' && 'ring-2 ring-destructive bg-destructive/5')}
-          onClick={() => toggleFilter('flagged')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Flagged</CardTitle>
-            <Flag className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.flagged}</div>
-            <p className="text-xs text-muted-foreground">Needs review</p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className="hover:bg-muted/50 transition-colors cursor-pointer h-full"
-          onClick={() => setActiveFilter('all')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalEntries}</div>
-            <div className="flex items-center gap-3 mt-1">
-              <span className="flex items-center gap-1 text-xs text-success">
-                <CheckCircle2 className="h-3 w-3" /> {stats.approved}
-              </span>
-              <span className="flex items-center gap-1 text-xs text-amber-500">
-                <Loader2 className="h-3 w-3" /> {stats.analyzing}
-              </span>
-              <span className="flex items-center gap-1 text-xs text-destructive">
-                <Flag className="h-3 w-3" /> {stats.flagged}
-              </span>
+            <div className="flex items-center gap-6">
+              <div className="relative h-[140px] w-[140px] shrink-0">
+                <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/20" />
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="url(#learnerGrad)" strokeWidth="3"
+                    strokeDasharray={`${stats.totalEntries > 0 ? (stats.approved / stats.totalEntries) * 100 : 0} ${stats.totalEntries > 0 ? 100 - (stats.approved / stats.totalEntries) * 100 : 100}`}
+                    strokeLinecap="round" className="transition-all duration-1000" />
+                  <defs><linearGradient id="learnerGrad"><stop offset="0%" stopColor="#22c55e" /><stop offset="100%" stopColor="#10b981" /></linearGradient></defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-emerald-600">{stats.totalEntries > 0 ? Math.round((stats.approved / stats.totalEntries) * 100) : 0}%</span>
+                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">Approved</span>
+                </div>
+              </div>
+              <div className="space-y-3 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🔥</span>
+                  <div>
+                    <p className="text-sm font-bold">{stats.approved} approved</p>
+                    <p className="text-[10px] text-muted-foreground">Learning streak active</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Weekly hours</span>
+                    <span className="font-bold tabular-nums">{Number(stats.totalHours || 0).toFixed(1)}h</span>
+                  </div>
+                  <Progress value={Math.min(100, (Number(stats.totalHours || 0) / 40) * 100)} className="h-2" />
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t">
+                  <span className="text-muted-foreground">Topics explored</span>
+                  <span className="font-bold">{new Set(entries.filter(e => e.user === user?.id).map(e => e.topic)).size}</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Hours</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+        {/* Weekly Hours Chart */}
+        <Card className="col-span-1 lg:col-span-4 shadow-sm border-blue-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              Weekly Activity
+            </CardTitle>
+            <CardDescription>Your hours over the last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Number(stats.totalHours || 0).toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">Hours logged this month</p>
+            <div className="h-[160px] w-full flex items-end justify-between gap-2 pb-6 pt-2 px-2">
+              {(() => {
+                const days = []
+                const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                for (let i = 6; i >= 0; i--) {
+                  const d = new Date()
+                  d.setDate(d.getDate() - i)
+                  const dateStr = d.toISOString().split('T')[0]
+                  const dayEntries = entries.filter(e => e.user === user?.id && e.date === dateStr)
+                  const hours = dayEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0)
+                  days.push({ label: dayLabels[d.getDay()], hours })
+                }
+                const maxHours = Math.max(1, ...days.map(d => d.hours))
+                return days.map((day, i) => (
+                  <div key={i} className="flex flex-col items-center w-full h-full justify-end group">
+                    <span className="text-[10px] font-bold text-blue-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">{day.hours.toFixed(1)}h</span>
+                    <div
+                      className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-md transition-all duration-500 hover:opacity-80 relative overflow-hidden"
+                      style={{ height: `${(day.hours / maxHours) * 100}%`, minHeight: day.hours > 0 ? '4px' : '0' }}
+                    >
+                      <div className="absolute inset-x-0 top-0 h-1 bg-white/30" />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-medium mt-1.5">{day.label}</span>
+                  </div>
+                ))
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent AI Verdicts */}
+      <Card className="shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 delay-75">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Brain className="h-4 w-4 text-violet-500" />
+            Recent AI Verdicts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {entries.filter(e => e.user === user?.id && e.ai_decision).slice(0, 5).map((entry, idx) => {
+              const confidence = Number(entry.ai_confidence || 0)
+              return (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-muted-foreground/10 hover:bg-muted/50 hover:-translate-y-0.5 transition-all cursor-pointer">
+                  <div className="relative h-10 w-10 shrink-0">
+                    <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/20" />
+                      <circle cx="18" cy="18" r="15.9155" fill="none"
+                        stroke={confidence >= 85 ? '#22c55e' : confidence >= 70 ? '#f59e0b' : '#ef4444'}
+                        strokeWidth="4" strokeDasharray={`${confidence} ${100 - confidence}`}
+                        strokeLinecap="round" className="transition-all duration-700" />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-[9px] font-bold tabular-nums">{Math.round(confidence)}</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{topics.find(t => t.id === entry.topic)?.name || 'General'}</p>
+                    <Badge className={cn(
+                      'text-[10px] uppercase font-bold',
+                      entry.ai_decision === 'approve' && 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
+                      entry.ai_decision === 'flag' && 'bg-red-500/15 text-red-700 border-red-500/30',
+                      entry.ai_decision === 'pending' && 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+                    )}>{entry.ai_decision}</Badge>
+                  </div>
+                </div>
+              )
+            })}
+            {entries.filter(e => e.user === user?.id && e.ai_decision).length === 0 && (
+              <div className="col-span-full py-8 text-center text-muted-foreground text-xs flex flex-col items-center gap-2">
+                <Info className="h-8 w-8 opacity-20" />
+                No AI verdicts yet. Submit an entry to get started!
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ═══ Premium Stats Cards ═══ */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
+        <Card
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-success group relative overflow-hidden",
+            activeFilter === 'approved' && 'bg-success/5 shadow-md')}
+          onClick={() => toggleFilter('approved')}
+        >
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <CheckCircle2 className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Approved</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent tabular-nums">{stats.approved}</div>
+              </div>
+              <div className="p-2 bg-success/10 rounded-md group-hover:bg-success/20 transition-colors">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Verified completed entries</p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-amber-500 group relative overflow-hidden",
+            activeFilter === 'analyzing' && 'bg-amber-500/5 shadow-md')}
+          onClick={() => toggleFilter('analyzing')}
+        >
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <Loader2 className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Analyzing</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent tabular-nums">{stats.analyzing}</div>
+              </div>
+              <div className="p-2 bg-amber-500/10 rounded-md group-hover:bg-amber-500/20 transition-colors">
+                <Loader2 className="h-5 w-5 text-amber-500 animate-[spin_3s_linear_infinite]" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Currently in AI pipeline</p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-destructive group relative overflow-hidden",
+            activeFilter === 'flagged' && 'bg-destructive/5 shadow-md')}
+          onClick={() => toggleFilter('flagged')}
+        >
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <Flag className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Flagged</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent tabular-nums">{stats.flagged}</div>
+              </div>
+              <div className="p-2 bg-destructive/10 rounded-md group-hover:bg-destructive/20 transition-colors">
+                <Flag className="h-5 w-5 text-destructive" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Requires your attention</p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={cn("hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-blue-500 group relative overflow-hidden",
+            activeFilter === 'all' && 'bg-blue-500/5 shadow-md')}
+          onClick={() => setActiveFilter('all')}
+        >
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <Layers className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total Entries</p>
+                <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent tabular-nums">{stats.totalEntries}</div>
+              </div>
+              <div className="p-2 bg-blue-500/10 rounded-md group-hover:bg-blue-500/20 transition-colors">
+                <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Lifetime learning log</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all border-l-4 border-l-muted group relative overflow-hidden h-full">
+          <div className="absolute right-0 top-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -mt-4 -mr-4">
+            <Clock className="h-24 w-24" />
+          </div>
+          <CardContent className="p-5 flex flex-col h-full justify-between relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Monthly Hours</p>
+                <div className="text-3xl font-bold text-muted-foreground tabular-nums">{Number(stats.totalHours || 0).toFixed(1)}h</div>
+              </div>
+              <div className="p-2 bg-muted/20 rounded-md group-hover:bg-muted/30 transition-colors">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/80 font-medium">Hours logged this month</p>
           </CardContent>
         </Card>
       </div>
@@ -2273,7 +2748,7 @@ function LearnerDashboard({
           <CardContent>
             {userPlan ? (
               <div className="space-y-4">
-                {userPlan.plan_topics.slice(0, 4).map((pt) => {
+                {(userPlan.plan_topics || []).slice(0, 4).map((pt) => {
                   const topic = topics.find((t) => t.id === pt.topic_id)
                   const userHours = entries
                     .filter((e) => e.user === user?.id && e.topic === pt.topic_id && e.status === 'approved')
@@ -2292,9 +2767,9 @@ function LearnerDashboard({
                     </div>
                   )
                 })}
-                {userPlan.plan_topics.length > 4 && (
+                {(userPlan.plan_topics || []).length > 4 && (
                   <p className="text-sm text-muted-foreground text-center">
-                    +{userPlan.plan_topics.length - 4} more topics
+                    +{(userPlan.plan_topics || []).length - 4} more topics
                   </p>
                 )}
               </div>
@@ -2340,4 +2815,4 @@ function LearnerDashboard({
       </Card>
     </>
   )
-}
+})

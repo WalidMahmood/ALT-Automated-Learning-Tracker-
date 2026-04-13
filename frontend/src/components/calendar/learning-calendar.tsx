@@ -105,9 +105,18 @@ export function LearningCalendar() {
     const finalDate = new Date(endDate)
     finalDate.setHours(0, 0, 0, 0)
 
+    // Optimization: Group entries by date (O(N) operation once)
+    const entriesByDate = entries.reduce((acc: Record<string, Entry[]>, entry) => {
+      if (!acc[entry.date]) acc[entry.date] = []
+      acc[entry.date].push(entry)
+      return acc
+    }, {})
+
     while (currentDate <= finalDate) {
       const dateString = toLocalDateString(currentDate)
-      const dayEntries = entries.filter((e) => e.date === dateString)
+      // Instant O(1) lookup instead of O(N) filter
+      const dayEntries = entriesByDate[dateString] || []
+
       const leaveRequest = leaveRequests.find((l) => {
         if (l.user !== user?.id || (l.status !== 'approved' && l.status !== 'pending')) return false
 
@@ -271,7 +280,8 @@ export function LearningCalendar() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <div className="premium-card shadow-lg shadow-blue-500/10 border-white/10 rounded-2xl border border-border bg-card/50 backdrop-blur-xl overflow-hidden relative">
+        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
         {/* Day Headers - Hide in Day View? Or show just the 1 day? */}
         {/* Let's keep it consistent for Month/Week, maybe hide for Day or show just "Today" */}
         {calendarView !== 'day' && (
@@ -279,7 +289,7 @@ export function LearningCalendar() {
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
               <div
                 key={day}
-                className="px-2 py-3 text-center text-sm font-medium text-muted-foreground"
+                className="px-2 py-3 text-center text-sm font-bold text-muted-foreground uppercase tracking-widest border-b border-white/5"
               >
                 {day}
               </div>
@@ -360,13 +370,14 @@ export function LearningCalendar() {
                     <div
                       key={entry.id}
                       className={cn(
-                        'rounded px-1.5 py-0.5 text-xs border flex items-center justify-between gap-1 group',
+                        'relative overflow-hidden rounded-lg px-2 py-1 text-xs border flex items-center justify-between gap-1 group shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5',
                         getStatusColor(entry.status),
                         isProject && 'border-l-2 border-l-indigo-400 dark:border-l-indigo-500',
                         calendarView === 'day' && 'p-2'
                       )}
                     >
-                      <span className="truncate font-medium">{isProject && <span className="text-xs mr-0.5">🛠️</span>}{chipLabel}</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/10 to-transparent -translate-x-[200%] group-hover:animate-[shine-sweep_1.5s_ease-in-out_forwards]" />
+                      <span className="relative z-10 truncate font-bold">{isProject && <span className="text-xs mr-0.5">🛠️</span>}{chipLabel}</span>
                       {/* Show hours in day/week view */}
                       {(calendarView !== 'month') && (
                         <span className="opacity-70 text-xs">{entry.hours}h</span>

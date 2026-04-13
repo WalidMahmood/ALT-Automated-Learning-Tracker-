@@ -39,6 +39,7 @@ import {
     Minus,
     Eye,
 } from 'lucide-react'
+import { NodeStructuredNotes } from '@/components/shared/node-structured-notes'
 
 interface EntryDetailModalProps {
     entry: Entry | null
@@ -53,7 +54,6 @@ export function EntryDetailModal({
 }: EntryDetailModalProps) {
     const { users } = useAppSelector((state) => state.users)
     const { topics } = useAppSelector((state) => state.topics)
-    const { entries } = useAppSelector((state) => state.entries)
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
 
     if (!entry) return null
@@ -148,7 +148,7 @@ export function EntryDetailModal({
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-bold text-foreground tracking-tight">AI Brain Analysis</h3>
-                                        <p className="text-xs text-muted-foreground">5-Node v6.0 Dual Pipeline &middot; {entry.intent?.replace('_', ' ') || 'deep learning'}</p>
+                                        <p className="text-xs text-muted-foreground">6-Node v7.0 RAG Pipeline &middot; {entry.intent?.replace('_', ' ') || 'deep learning'}</p>
                                     </div>
                                 </div>
                                 {entry.admin_override ? (
@@ -178,24 +178,22 @@ export function EntryDetailModal({
                                         <div className="flex items-center justify-between mb-1.5">
                                             <span className="text-xs font-medium text-muted-foreground">Confidence Score</span>
                                             <span className={cn("text-sm font-bold tabular-nums",
-                                                confidence >= 85 ? "text-emerald-600" : confidence >= 70 ? "text-amber-600" : "text-red-600"
+                                                confidence >= 70 ? "text-emerald-600" : "text-amber-600"
                                             )}>{confidence.toFixed(1)}%</span>
                                         </div>
                                         <div className="relative h-2.5 w-full rounded-full bg-muted overflow-hidden">
                                             <div className={cn("h-full rounded-full transition-all duration-700 ease-out",
-                                                confidence >= 85 ? "bg-gradient-to-r from-emerald-400 to-emerald-500" :
-                                                    confidence >= 70 ? "bg-gradient-to-r from-amber-400 to-amber-500" :
-                                                        "bg-gradient-to-r from-red-400 to-red-500"
+                                                confidence >= 70 ? "bg-gradient-to-r from-emerald-400 to-emerald-500" :
+                                                    "bg-gradient-to-r from-amber-400 to-amber-500"
                                             )} style={{ width: `${Math.min(confidence, 100)}%` }} />
-                                            <div className="absolute top-0 left-[70%] w-px h-full bg-foreground/20" title="Flag threshold" />
-                                            <div className="absolute top-0 left-[85%] w-px h-full bg-foreground/20" title="Approve threshold" />
+                                            <div className="absolute top-0 left-[40%] w-px h-full bg-foreground/20" title="Flag threshold" />
+                                            <div className="absolute top-0 left-[80%] w-px h-full bg-foreground/20" title="Approve threshold" />
                                         </div>
                                         <div className="flex justify-between mt-1">
                                             <span className="text-xs text-muted-foreground">0%</span>
                                             <div className="flex gap-3">
-                                                <span className="text-xs text-red-500/70">Pending &lt;70</span>
-                                                <span className="text-xs text-amber-500/70">Flag 70-84</span>
-                                                <span className="text-xs text-emerald-500/70">Approve 85+</span>
+                                                <span className="text-xs text-amber-500/70">Review &lt;70</span>
+                                                <span className="text-xs text-emerald-500/70">Approved 70+</span>
                                             </div>
                                             <span className="text-xs text-muted-foreground">100%</span>
                                         </div>
@@ -266,10 +264,11 @@ export function EntryDetailModal({
 
                                 const NODE_DEFS = [
                                     { key: 'context_analysis', label: 'Context Gatherer', shortLabel: 'Context', desc: 'Gathers all prior entries, copy-paste detection, progress coherence, blockers', icon: <Layers className="w-3.5 h-3.5" />, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-800/40', ring: 'ring-slate-300 dark:ring-slate-700', accent: 'border-l-slate-400' },
-                                    { key: 'time_analysis', label: 'Time Reasoner', shortLabel: 'Time', desc: 'LLM assesses if hours are reasonable given context, experience & blockers', icon: <Clock className="w-3.5 h-3.5" />, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/40', ring: 'ring-blue-300 dark:ring-blue-700', accent: 'border-l-blue-400' },
-                                    { key: 'content_analysis', label: 'Content Validator', shortLabel: 'Content', desc: 'LLM validates genuine learning/work, topic match, depth vs hours', icon: <FileSearch className="w-3.5 h-3.5" />, color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100 dark:bg-cyan-900/40', ring: 'ring-cyan-300 dark:ring-cyan-700', accent: 'border-l-cyan-400' },
-                                    { key: 'progress_analysis', label: 'Progress Analyzer', shortLabel: 'Progress', desc: 'LLM checks progress coherence, completion justification, pace', icon: <Target className="w-3.5 h-3.5" />, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/40', ring: 'ring-emerald-300 dark:ring-emerald-700', accent: 'border-l-emerald-400' },
-                                    { key: 'final_decision', label: 'Verdict Agent', shortLabel: 'Verdict', desc: 'LLM synthesizes all node findings into final connected decision', icon: <Scale className="w-3.5 h-3.5" />, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/40', ring: 'ring-rose-300 dark:ring-rose-700', accent: 'border-l-rose-500' },
+                                    { key: 'rag_context', label: 'RAG Knowledge', shortLabel: 'RAG', desc: 'Retrieves topic knowledge, subtopic coverage, and admin corrections from knowledge base', icon: <Layers className="w-3.5 h-3.5" />, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/40', ring: 'ring-purple-300 dark:ring-purple-700', accent: 'border-l-purple-400' },
+                                    { key: 'time_analysis', label: 'Time Reasoner', shortLabel: 'Time', desc: 'LLM assesses if hours are reasonable given context, experience, blockers & topic scope', icon: <Clock className="w-3.5 h-3.5" />, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/40', ring: 'ring-blue-300 dark:ring-blue-700', accent: 'border-l-blue-400' },
+                                    { key: 'content_analysis', label: 'Content Validator', shortLabel: 'Content', desc: 'LLM validates genuine learning using topic knowledge, subtopic coverage & admin corrections', icon: <FileSearch className="w-3.5 h-3.5" />, color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100 dark:bg-cyan-900/40', ring: 'ring-cyan-300 dark:ring-cyan-700', accent: 'border-l-cyan-400' },
+                                    { key: 'progress_analysis', label: 'Progress Analyzer', shortLabel: 'Progress', desc: 'LLM checks progress coherence, completion justification, subtopic coverage vs claimed progress', icon: <Target className="w-3.5 h-3.5" />, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/40', ring: 'ring-emerald-300 dark:ring-emerald-700', accent: 'border-l-emerald-400' },
+                                    { key: 'final_decision', label: 'Verdict Agent', shortLabel: 'Verdict', desc: 'LLM synthesizes all node findings into confidence score → decision', icon: <Scale className="w-3.5 h-3.5" />, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/40', ring: 'ring-rose-300 dark:ring-rose-700', accent: 'border-l-rose-500' },
                                 ]
 
                                 const activeNodes = NODE_DEFS.filter(n => resolveNode(n.key)).map((n, idx) => {
@@ -284,7 +283,12 @@ export function EntryDetailModal({
                                     }
                                     const summary = s ? raw.summary : String(raw)
                                     const details = s ? (typeof raw.details === 'string' ? raw.details : raw.details ? JSON.stringify(raw.details, null, 2) : null) : null
-                                    return { ...n, idx, raw, structured: s, score, path, summary, details, legacyFinal, pathReason, llmResponse }
+                                    const evidence = s ? (raw as any).evidence || null : null
+                                    const llmReasoning = s ? (raw as any).llm_reasoning || null : null
+                                    const ragAnalysis = s ? (raw as any).rag_analysis || null : null
+                                    const guards: string[] = s ? ((raw as any).guards || []) : []
+                                    const remaining: string[] | null = s ? ((raw as any).remaining || null) : null
+                                    return { ...n, idx, raw, structured: s, score, path, summary, details, legacyFinal, pathReason, llmResponse, evidence, llmReasoning, ragAnalysis, guards, remaining }
                                 })
 
                                 const gradeFor = (score: number | null) => {
@@ -377,7 +381,7 @@ export function EntryDetailModal({
                                                 {/* Vertical connecting line */}
                                                 <div className="absolute left-[23px] top-4 bottom-4 w-px bg-gradient-to-b from-violet-300 via-indigo-300 to-rose-300 dark:from-violet-700 dark:via-indigo-700 dark:to-rose-700" />
 
-                                                {activeNodes.map((n, i) => {
+                                                {activeNodes.map((n) => {
                                                     const isExpanded = expandedNodes.has(n.key)
                                                     const isFinal = n.key === 'final_decision'
                                                     const pm = pathMeta(n.path)
@@ -458,27 +462,7 @@ export function EntryDetailModal({
                                                                             </div>
                                                                         )}
 
-                                                                        {/* AI Chain of Thought — full LLM response like LangSmith */}
-                                                                        {n.llmResponse && (
-                                                                            <div className="p-2.5 rounded-md bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800/40">
-                                                                                <p className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                                                                    <Brain className="w-3.5 h-3.5" />LLM Chain of Thought <span className="font-normal text-violet-500 dark:text-violet-500 ml-1">(llama3.1 raw response)</span>
-                                                                                </p>
-                                                                                <div className="p-2 rounded bg-violet-100/50 dark:bg-violet-900/30 border border-violet-200/60 dark:border-violet-800/30">
-                                                                                    <p className="text-xs leading-relaxed text-violet-900/90 dark:text-violet-200/90 whitespace-pre-wrap break-words font-mono" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                                                                        {n.llmResponse}
-                                                                                    </p>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-
-                                                                        {/* Examiner notes (summary) */}
-                                                                        <div className="p-2.5 rounded-md bg-card border">
-                                                                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Examiner Notes</p>
-                                                                            <p className="text-[12px] leading-relaxed text-foreground/80 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                                                                {n.summary}
-                                                                            </p>
-                                                                        </div>
+                                                                        <NodeStructuredNotes summary={n.summary} evidence={n.evidence} llmReasoning={n.llmReasoning} llmResponse={n.llmResponse} ragAnalysis={n.ragAnalysis} guards={n.guards} remaining={n.remaining} />
 
                                                                         {/* Final Decision: dimension breakdown (structured) */}
                                                                         {isFinal && fd && fd.scores && (
@@ -539,8 +523,8 @@ export function EntryDetailModal({
                                                                             </div>
                                                                         )}
 
-                                                                        {/* Full details (structured only) */}
-                                                                        {n.details && (
+                                                                        {/* Full details (only when no LLM response and no structured evidence — avoids duplication) */}
+                                                                        {n.details && !n.llmResponse && !n.evidence && (
                                                                             <div className="p-2 rounded-md bg-muted/30 border">
                                                                                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Full Details</p>
                                                                                 <div className="text-xs leading-relaxed text-foreground/70 whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
@@ -627,58 +611,48 @@ export function EntryDetailModal({
                             </button>
                             {expandedNodes.has('brain-card') && (
                                 <div className="p-3 space-y-2.5">
-                                    <p className="text-xs text-muted-foreground">6-Node LangGraph Pipeline v4.1 — Every entry passes through this</p>
+                                    <p className="text-xs text-muted-foreground">6-Node v7.0 RAG Pipeline — Every entry passes through this</p>
                                     {[
                                         {
-                                            num: 0, label: 'Context Builder', mode: 'logic' as const,
-                                            what: 'Researches the learner before scoring begins',
-                                            checks: ['Prior entries on this topic/project', 'Copy-paste detection (Jaccard similarity)', 'Progress % coherence check', 'Learner velocity & avg hours'],
+                                            num: 0, label: 'Context Gatherer', mode: 'logic' as const,
+                                            what: 'Researches the learner before AI analysis begins',
+                                            checks: ['Prior entries on this topic/project', 'Copy-paste detection (Jaccard + sequence similarity)', 'Progress % coherence check', 'Blocker parsing & categorization', 'Pace analysis & total hours invested'],
                                         },
                                         {
-                                            num: 1, label: 'Time Validation', mode: 'hybrid' as const,
-                                            what: 'Math baseline + AI contextual check',
-                                            checks: ['Expected hours = benchmark × difficulty × experience × intent × velocity', 'AI reads description depth to validate time claim', 'Blended 50% math + 50% AI score'],
+                                            num: 1, label: 'RAG Knowledge', mode: 'logic' as const,
+                                            what: 'Retrieves topic knowledge and admin corrections from knowledge base',
+                                            checks: ['Exact topic lookup from PostgreSQL', 'Semantic fallback via ChromaDB embeddings', 'Subtopic coverage analysis (prior + current)', 'Admin wisdom retrieval (semantic matching)'],
                                         },
                                         {
-                                            num: 2, label: 'Quality Analysis', mode: 'ai' as const,
-                                            what: 'AI evaluates substance & genuine understanding',
-                                            checks: ['Does it name specific concepts, tools, techniques?', 'Depth matches hours claimed?', 'Risk-adaptive: low/medium/high risk prompts', 'Copy-paste penalty applied after AI scoring'],
+                                            num: 2, label: 'Time Reasoner', mode: 'ai' as const,
+                                            what: 'LLM assesses if hours are reasonable with full context + topic scope',
+                                            checks: ['Hours vs difficulty, experience, and benchmark', 'RAG: Topic scope and learning objectives', 'Blocker impact on time justification', 'First entry leniency, history comparison'],
                                         },
                                         {
-                                            num: 3, label: 'Topic Relevance', mode: 'ai' as const,
-                                            what: 'AI checks content matches assigned topic/project',
-                                            checks: ['For topics: is this actually about the topic?', 'For projects: matches project description?', 'Global Wisdom: learns from admin corrections'],
+                                            num: 3, label: 'Content Validator', mode: 'ai' as const,
+                                            what: 'LLM evaluates genuine learning using topic knowledge',
+                                            checks: ['RAG: Compare entry against expected subtopics', 'Genuine understanding vs vague fluff?', 'New subtopics vs repeat of prior entries?', 'Coverage ratio vs claimed progress alignment', 'Admin corrections from knowledge base'],
                                         },
                                         {
-                                            num: 4, label: 'Blocker Analysis', mode: 'conditional' as const,
-                                            what: 'Validates blockers & applies time boost',
-                                            checks: ['Known categories → auto boost by detail level', 'Unknown/other → AI judges legitimacy', 'Legitimate blocker = time boost for the entry'],
+                                            num: 4, label: 'Progress Analyzer', mode: 'ai' as const,
+                                            what: 'LLM checks completion claims & subtopic coverage',
+                                            checks: ['Is claimed progress % realistic for hours invested?', 'RAG: Subtopic coverage vs completion claim', 'Progress timeline: steady or suspicious jumps?', 'Pace analysis: hours per % progress'],
                                         },
-                                        {
-                                            num: 5, label: 'Weighted Decision', mode: 'logic' as const,
-                                            what: 'Combines all scores with intent-specific weights',
-                                            checks: ['Score = (Time × Wt) + (Quality × Wt) + (Relevance × Wt)', 'Weights change per intent (see below)', '+ Blocker boost added on top'],
-                                        },
+                                        { num: 5, label: 'Verdict Agent', mode: 'ai' as const, what: 'LLM synthesizes ALL findings into confidence → decision', checks: ['Sees all node verdicts + RAG context', 'Confidence 70%+ → Approve', 'Confidence <70% → Pending (human review)'] },
                                     ].map((node) => (
                                         <div key={node.num} className={cn(
                                             "p-2 rounded-lg border",
                                             node.mode === 'ai' ? "bg-violet-50/50 dark:bg-violet-950/10 border-violet-200 dark:border-violet-800/40" :
-                                                node.mode === 'hybrid' ? "bg-indigo-50/50 dark:bg-indigo-950/10 border-indigo-200 dark:border-indigo-800/40" :
-                                                    node.mode === 'conditional' ? "bg-amber-50/50 dark:bg-amber-950/10 border-amber-200 dark:border-amber-800/40" :
-                                                        "bg-slate-50/50 dark:bg-slate-800/20 border-slate-200 dark:border-slate-700/40"
+                                                "bg-slate-50/50 dark:bg-slate-800/20 border-slate-200 dark:border-slate-700/40"
                                         )}>
                                             <div className="flex items-center gap-1.5 mb-1">
                                                 <div className={cn(
                                                     "w-4 h-4 rounded-full border flex items-center justify-center text-xs font-bold shrink-0",
                                                     node.mode === 'ai' ? "border-violet-400 bg-violet-100 dark:bg-violet-900/40 text-violet-600" :
-                                                        node.mode === 'hybrid' ? "border-indigo-400 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" :
-                                                            node.mode === 'conditional' ? "border-amber-400 bg-amber-100 dark:bg-amber-900/40 text-amber-600" :
-                                                                "border-slate-300 bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                                        "border-slate-300 bg-slate-100 dark:bg-slate-800 text-slate-500"
                                                 )}>{node.num}</div>
                                                 <span className="text-xs font-bold text-foreground">{node.label}</span>
                                                 {node.mode === 'ai' && <span className="text-xs px-1 rounded bg-violet-200 dark:bg-violet-800/40 text-violet-700 dark:text-violet-300 font-bold">AI</span>}
-                                                {node.mode === 'hybrid' && <span className="text-xs px-1 rounded bg-indigo-200 dark:bg-indigo-800/40 text-indigo-700 dark:text-indigo-300 font-bold">HYBRID</span>}
-                                                {node.mode === 'conditional' && <span className="text-xs px-1 rounded bg-amber-200 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300 font-bold">COND</span>}
                                             </div>
                                             <p className="text-xs text-muted-foreground italic mb-1">{node.what}</p>
                                             <div className="space-y-0.5">
@@ -694,36 +668,16 @@ export function EntryDetailModal({
 
                                     {/* Decision tiers */}
                                     <div className="border-t pt-2 space-y-1">
-                                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Decision Tiers</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Decision Tiers (Confidence-Based)</p>
                                         <div className="flex gap-1.5">
                                             <div className="flex-1 p-1.5 rounded bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-center">
-                                                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">≥ 85%</p>
-                                                <p className="text-xs text-emerald-600 dark:text-emerald-500 font-semibold">APPROVE</p>
+                                                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">APPROVE</p>
+                                                <p className="text-xs text-emerald-600 dark:text-emerald-500 font-semibold">70%+</p>
                                             </div>
                                             <div className="flex-1 p-1.5 rounded bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-center">
-                                                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">70-84%</p>
-                                                <p className="text-xs text-amber-600 dark:text-amber-500 font-semibold">FLAG</p>
+                                                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">REVIEW</p>
+                                                <p className="text-xs text-amber-600 dark:text-amber-500 font-semibold">&lt;70%</p>
                                             </div>
-                                            <div className="flex-1 p-1.5 rounded bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-center">
-                                                <p className="text-xs font-bold text-red-700 dark:text-red-400">&lt; 70%</p>
-                                                <p className="text-xs text-red-600 dark:text-red-500 font-semibold">PENDING</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Weights by intent */}
-                                    <div className="border-t pt-2 space-y-1">
-                                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Weights by Intent</p>
-                                        <div className="grid grid-cols-2 gap-1">
-                                            {[
-                                                { intent: 'L&D Tasks', w: 'T40 Q40 R20' },
-                                                { intent: 'SBU Tasks', w: 'T50 Q30 R20' },
-                                            ].map(({ intent, w }) => (
-                                                <div key={intent} className="p-1 rounded border bg-muted/20 text-center">
-                                                    <p className="text-xs font-semibold text-foreground/80">{intent}</p>
-                                                    <p className="text-xs text-muted-foreground font-mono">{w}</p>
-                                                </div>
-                                            ))}
                                         </div>
                                     </div>
 
@@ -732,9 +686,9 @@ export function EntryDetailModal({
                                         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Safety Nets</p>
                                         <div className="space-y-0.5">
                                             {[
-                                                { icon: <Timer className="w-2.5 h-2.5 text-amber-500" />, text: 'Circuit breakers skip AI if pipeline exceeds 23s' },
-                                                { icon: <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />, text: 'Logic fallback if any LLM call fails' },
-                                                { icon: <Brain className="w-2.5 h-2.5 text-violet-500" />, text: 'Global Wisdom: AI learns from admin corrections' },
+                                                { icon: <Timer className="w-2.5 h-2.5 text-amber-500" />, text: 'Circuit breaker: 15s per node, 55s pipeline guard' },
+                                                { icon: <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />, text: 'Logic fallback if LLM fails — never auto-approve' },
+                                                { icon: <Brain className="w-2.5 h-2.5 text-violet-500" />, text: 'RAG: AI uses topic knowledge + admin corrections from ChromaDB' },
                                                 { icon: <Eye className="w-2.5 h-2.5 text-blue-500" />, text: 'Full LLM chain-of-thought stored for traceability' },
                                             ].map((item, i) => (
                                                 <div key={i} className="flex items-center gap-1.5 text-xs">
@@ -777,33 +731,14 @@ export function EntryDetailModal({
                                 </div>
                                 <Separator />
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Progress</span>
-                                    <span className="font-medium">
-                                        {(() => {
-                                            if (topic?.parent_id) {
-                                                const parentTopic = topics.find(t => t.id === topic.parent_id)
-                                                if (parentTopic) {
-                                                    const childTopics = topics.filter(t => t.parent_id === parentTopic.id)
-                                                    if (childTopics.length > 0) {
-                                                        const totalProgress = childTopics.reduce((sum, child) => {
-                                                            const childEntries = entries.filter(e => e.topic === child.id && e.user === entry.user)
-                                                            const maxP = childEntries.length > 0 ? Math.max(...childEntries.map(e => Number(e.progress_percent) || 0)) : 0
-                                                            return sum + maxP
-                                                        }, 0)
-                                                        return Math.round(totalProgress / childTopics.length)
-                                                    }
-                                                }
-                                            }
-                                            return Math.round(Number(entry.progress_percent) || 0)
-                                        })()}%
-                                    </span>
+                                    <span className="text-muted-foreground">Status</span>
+                                    <Badge variant="outline" className={cn(
+                                        "text-xs font-bold",
+                                        entry.is_completed ? "text-emerald-700 border-emerald-300 bg-emerald-50" : "text-muted-foreground"
+                                    )}>
+                                        {entry.is_completed ? 'Completed' : 'In Progress'}
+                                    </Badge>
                                 </div>
-                                {entry.is_completed && (
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Completed</span>
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                    </div>
-                                )}
                                 {topic && entry.hours > 0 && (
                                     <>
                                         <Separator />

@@ -5,14 +5,14 @@ import { fetchTrainingPlans } from './trainingPlansSlice'
 
 interface TopicsState {
   topics: Topic[]
-  topicsTree: Topic[]
   selectedTopic: Topic | null
   isLoading: boolean
   error: string | null
+  lastFetched: number | null
 }
 
 // Build hierarchical tree from flat topics list
-function buildTopicsTree(topics: Topic[]): Topic[] {
+export function buildTopicsTree(topics: Topic[]): Topic[] {
   const topicMap = new Map<number, Topic>()
   const roots: Topic[] = []
 
@@ -40,14 +40,23 @@ function buildTopicsTree(topics: Topic[]): Topic[] {
 // Async Thunks
 export const fetchTopics = createAsyncThunk(
   'topics/fetchTopics',
-  async (_, { rejectWithValue }) => {
+  async (force: boolean | undefined, { rejectWithValue }) => {
     try {
       const response = await api.get('/topics/')
-      // Handle pagination results
       return Array.isArray(response.data) ? response.data : response.data.results
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch topics')
     }
+  },
+  {
+    condition: (force, { getState }) => {
+      const { topics } = getState() as { topics: TopicsState }
+      // Block if already loading (prevents StrictMode double-fetch)
+      if (topics.isLoading) return false
+      // Skip if fetched recently (30s) unless forced
+      if (!force && topics.lastFetched && Date.now() - topics.lastFetched < 30000) return false
+      return true
+    },
   }
 )
 
@@ -57,7 +66,7 @@ export const deleteTopicThunk = createAsyncThunk(
     try {
       await api.delete(`/topics/${id}/`)
       // Refresh training plans to update hours if this topic was included
-      thunkAPI.dispatch(fetchTrainingPlans())
+      thunkAPI.dispatch(fetchTrainingPlans(true))
       return id
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to delete topic')
@@ -67,10 +76,10 @@ export const deleteTopicThunk = createAsyncThunk(
 
 const initialState: TopicsState = {
   topics: [],
-  topicsTree: [],
   selectedTopic: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
 }
 
 const topicsSlice = createSlice({
@@ -82,18 +91,15 @@ const topicsSlice = createSlice({
     },
     setTopics: (state, action: PayloadAction<Topic[]>) => {
       state.topics = action.payload
-      state.topicsTree = buildTopicsTree(action.payload)
       state.isLoading = false
     },
     addTopic: (state, action: PayloadAction<Topic>) => {
       state.topics.push(action.payload)
-      state.topicsTree = buildTopicsTree(state.topics)
     },
     updateTopic: (state, action: PayloadAction<Topic>) => {
       const index = state.topics.findIndex((t) => t.id === action.payload.id)
       if (index !== -1) {
         state.topics[index] = action.payload
-        state.topicsTree = buildTopicsTree(state.topics)
       }
     },
     updateTopicMastery: (state, action: PayloadAction<{ id: number; mastery: Topic['mastery'] }>) => {
@@ -103,7 +109,6 @@ const topicsSlice = createSlice({
           ...state.topics[index],
           mastery: action.payload.mastery
         }
-        state.topicsTree = buildTopicsTree(state.topics)
       }
     },
     // deleteTopic reducer removed in favor of thunk
@@ -123,7 +128,7 @@ const topicsSlice = createSlice({
       })
       .addCase(fetchTopics.fulfilled, (state, action) => {
         state.topics = action.payload
-        state.topicsTree = buildTopicsTree(action.payload)
+        state.lastFetched = Date.now()
         state.isLoading = false
       })
       .addCase(fetchTopics.rejected, (state, action) => {

@@ -6,40 +6,211 @@ from apps.topics.models import Topic
 
 class Project(models.Model):
     """
-    Dedicated project model for project_work / debugging entries.
-    Supports full CRUD, soft-delete, and stacked entry history.
+    Admin-owned project model for SBU Tasks.
+    Projects are created by admins and assigned to users via ProjectAssignment.
+    Supports full CRUD, soft-delete, timelines, and stacked entry history.
     """
-    user = models.ForeignKey(
+    created_by = models.ForeignKey(
         User,
-        on_delete=models.RESTRICT,
-        related_name='projects'
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_projects',
+        help_text="Admin who created the project"
     )
     name = models.CharField(max_length=200)
-    description = models.TextField(max_length=500, blank=True, default='')
+    description = models.TextField(max_length=1000, blank=True, default='')
+    key_modules = models.JSONField(
+        default=list, blank=True,
+        help_text="List of key modules/features to build (e.g. ['Authentication', 'API', 'Dashboard'])"
+    )
+    out_of_scope = models.JSONField(
+        default=list, blank=True,
+        help_text="List of explicitly excluded features (e.g. ['Mobile app', 'ML features'])"
+    )
+    tech_stack = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text="Tech stack summary (e.g. 'React + Django + PostgreSQL + Docker') — legacy, use structured fields"
+    )
+    # v9.0: Structured tech stack fields
+    tech_frontend = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text="Frontend tech (e.g. 'React, Next.js, TailwindCSS')"
+    )
+    tech_backend = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text="Backend tech (e.g. 'Django, Celery, Redis')"
+    )
+    tech_database = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text="Database tech (e.g. 'PostgreSQL, Redis')"
+    )
+    tech_cloud = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text="Cloud/DevOps tech (e.g. 'AWS, Docker, GitHub Actions')"
+    )
+    success_criteria = models.CharField(
+        max_length=300, blank=True, default='',
+        help_text="Performance targets or completion criteria (e.g. '<200ms API, 99.9% uptime')"
+    )
+    start_date = models.DateField(null=True, blank=True, help_text="Project start date")
+    end_date = models.DateField(null=True, blank=True, help_text="Project end/deadline date")
     is_completed = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    repo_url = models.URLField(
+        max_length=500, blank=True, default='',
+        help_text="GitHub repository URL (e.g. https://github.com/org/repo)"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'projects'
         ordering = ['-updated_at']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'name'],
-                name='unique_user_project_name',
-                condition=models.Q(is_active=True)
-            ),
-        ]
         verbose_name = 'Project'
         verbose_name_plural = 'Projects'
 
     def __str__(self):
-        return f"{self.user.email} - {self.name}"
+        return self.name
 
     def soft_delete(self):
         self.is_active = False
         self.save()
+
+
+class ProjectFeature(models.Model):
+    """
+    Per-feature tracking for projects.
+    Each feature has its own success criteria and out-of-scope items.
+    Replaces the flat key_modules JSONField for structured tracking.
+    """
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='features'
+    )
+    name = models.CharField(max_length=200)
+    description = models.TextField(max_length=500, blank=True, default='')
+    success_criteria = models.TextField(
+        max_length=500, blank=True, default='',
+        help_text="Comma-separated criteria (e.g. 'Token expiry, refresh logic')"
+    )
+    out_of_scope = models.JSONField(
+        default=list, blank=True,
+        help_text="Items excluded from this feature"
+    )
+    FEATURE_STATUS_CHOICES = [
+        ('not_started', 'Not Started'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+    ]
+    status = models.CharField(
+        max_length=20, choices=FEATURE_STATUS_CHOICES, default='not_started'
+    )
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='completed_features',
+        help_text="User whose approved entry marked this feature complete"
+    )
+    started_at = models.DateTimeField(null=True, blank=True)
+    started_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='started_features',
+        help_text="User who first worked on this feature (first approved entry)"
+    )
+    reopened_at = models.DateTimeField(null=True, blank=True)
+    reopened_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reopened_features',
+        help_text="User whose approved entry reopened this completed feature"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'project_features'
+        ordering = ['project', 'name']
+        unique_together = ['project', 'name']
+        verbose_name = 'Project Feature'
+        verbose_name_plural = 'Project Features'
+
+    def __str__(self):
+        return f"{self.project.name} — {self.name} ({self.status})"
+
+
+class ProjectAssignment(models.Model):
+    """
+    M2M assignment linking projects to users.
+    Allows admins to assign a project to one or multiple users.
+    """
+    PROJECT_ROLE_CHOICES = [
+        ('frontend', 'Frontend'),
+        ('backend', 'Backend'),
+        ('fullstack', 'Full Stack'),
+        ('devops', 'DevOps'),
+        ('devsecops', 'DevSecOps'),
+        ('mobile', 'Mobile'),
+        ('android', 'Android'),
+        ('ios', 'iOS'),
+        ('game', 'Game Developer'),
+        ('game_server', 'Server Side Game Developer'),
+        ('qa', 'QA'),
+        ('test_automation', 'Test Automation'),
+        ('data', 'Data Analyst'),
+        ('data_engineer', 'Data Engineer'),
+        ('ai', 'AI Engineer'),
+        ('ai_data_scientist', 'AI and Data Scientist'),
+        ('ml', 'Machine Learning'),
+        ('mlops', 'MLOps'),
+        ('bi', 'BI Analyst'),
+        ('blockchain', 'Blockchain'),
+        ('cyber_security', 'Cyber Security'),
+        ('architect', 'Software Architect'),
+        ('db_admin', 'PostgreSQL / DBA'),
+        ('product_manager', 'Product Manager'),
+        ('engineering_manager', 'Engineering Manager'),
+        ('design', 'UX Design'),
+        ('technical_writer', 'Technical Writer'),
+        ('devrel', 'Developer Relations'),
+        ('fundamentals', 'Computer Science / Fundamentals'),
+        ('soft_skills', 'Soft Skills'),
+        ('lead', 'Lead'),
+        ('general', 'General'),
+    ]
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='assignments'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='project_assignments'
+    )
+    role = models.CharField(
+        max_length=50,
+        choices=PROJECT_ROLE_CHOICES,
+        default='general',
+        help_text="User's role on this project"
+    )
+    assigned_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_project_assignments',
+        help_text="Admin who made this assignment"
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'project_assignments'
+        unique_together = ['project', 'user']
+        ordering = ['-assigned_at']
+        verbose_name = 'Project Assignment'
+        verbose_name_plural = 'Project Assignments'
+
+    def __str__(self):
+        return f"{self.user.email} -> {self.project.name}"
 
 
 class Entry(models.Model):
@@ -153,6 +324,11 @@ class Entry(models.Model):
         help_text="True if the learner has finished this topic"
     )
 
+    @property
+    def learning_status(self):
+        """v8.0: Binary status derived from is_completed. No migration needed."""
+        return 'completed' if self.is_completed else 'in_progress'
+
     # AI Analysis Fields
     ai_status = models.CharField(
         max_length=20,
@@ -186,6 +362,52 @@ class Entry(models.Model):
     override_comment = models.TextField(null=True, blank=True)
     override_at = models.DateTimeField(null=True, blank=True)
 
+    # Module-level tracking for SBU entries
+    FEATURE_STATUS_CHOICES = [
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+    ]
+    target_module = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        help_text='Key module/feature the user worked on (for SBU entries)'
+    )
+    feature_status = models.CharField(
+        max_length=20,
+        choices=FEATURE_STATUS_CHOICES,
+        default='in_progress',
+        help_text='Status of the target module: in_progress or completed'
+    )
+
+    # Git Commit Validation (Phase 2 — advisory signal only)
+    GIT_RESULT_CHOICES = [
+        ('pending', 'Pending'),
+        ('match', 'Match'),
+        ('partial', 'Partial Match'),
+        ('no_match', 'No Match'),
+        ('skipped', 'Skipped'),
+    ]
+    is_non_coding = models.BooleanField(
+        default=False,
+        help_text='User self-reports this as non-coding work (design, meetings, docs)'
+    )
+    git_validation_result = models.CharField(
+        max_length=20,
+        choices=GIT_RESULT_CHOICES,
+        default='pending',
+        help_text='Git commit validation result (advisory only)'
+    )
+    git_score_adjustment = models.DecimalField(
+        max_digits=4, decimal_places=2,
+        default=0,
+        help_text='Confidence adjustment from git analysis (-10 to +10)'
+    )
+    git_evidence = models.JSONField(
+        default=dict, blank=True,
+        help_text='Git commit evidence: {commits_found, files_changed, lines_added, reasoning}'
+    )
+
     # Soft Delete & Timestamps
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -194,6 +416,12 @@ class Entry(models.Model):
     class Meta:
         db_table = 'entries'
         ordering = ['-date', '-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'status'], name='idx_entry_active_status'),
+            models.Index(fields=['is_active', 'ai_status'], name='idx_entry_active_ai_status'),
+            models.Index(fields=['is_active', 'date'], name='idx_entry_active_date'),
+            models.Index(fields=['is_active', 'topic_id'], name='idx_entry_active_topic'),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'date', 'topic'],

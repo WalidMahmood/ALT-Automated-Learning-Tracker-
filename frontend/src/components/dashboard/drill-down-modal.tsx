@@ -142,10 +142,10 @@ export function DrillDownModal({
                                             <TableHead>User ID/Name</TableHead>
                                             <TableHead
                                                 className="text-right cursor-pointer hover:text-primary transition-colors"
-                                                onClick={() => handleSort('progress_percent')}
+                                                onClick={() => handleSort('is_completed')}
                                             >
                                                 <div className="flex items-center justify-end gap-1">
-                                                    Progress %
+                                                    Status
                                                     <ArrowUpDown className="h-3 w-3" />
                                                 </div>
                                             </TableHead>
@@ -168,8 +168,8 @@ export function DrillDownModal({
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                        <Badge variant="outline" className="font-mono bg-muted/30">
-                                                            {entry.progress_percent}%
+                                                        <Badge variant="outline" className={`font-mono bg-muted/30 ${entry.is_completed ? 'text-emerald-700 border-emerald-300' : ''}`}>
+                                                            {entry.is_completed ? 'Completed' : 'In Progress'}
                                                         </Badge>
                                                     </TableCell>
                                                 </TableRow>

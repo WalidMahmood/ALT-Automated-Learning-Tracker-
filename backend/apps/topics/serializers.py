@@ -2,7 +2,20 @@
 Serializers for Topic model
 """
 from rest_framework import serializers
-from .models import Topic, LearnerTopicMastery
+from .models import Topic, LearnerTopicMastery, TopicKnowledge, TopicResource
+
+
+class TopicLiteSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for admin — no mastery, minimal fields.
+    Cuts payload from ~1.2MB to ~200KB for 4700+ topics."""
+    parent_id = serializers.IntegerField(read_only=True, allow_null=True)
+
+    class Meta:
+        model = Topic
+        fields = ['id', 'name', 'parent_id', 'depth', 'benchmark_hours',
+                  'difficulty', 'domain', 'language',
+                  'is_active', 'created_at', 'updated_at']
+        read_only_fields = fields
 
 
 class TopicSerializer(serializers.ModelSerializer):
@@ -25,6 +38,8 @@ class TopicSerializer(serializers.ModelSerializer):
             'depth',
             'benchmark_hours',
             'difficulty',
+            'domain',
+            'language',
             'mastery',
             'is_active',
             'created_at',
@@ -40,8 +55,17 @@ class TopicSerializer(serializers.ModelSerializer):
         user = request.user
         if not user or user.is_anonymous:
             return None
-        
-        mastery = LearnerTopicMastery.objects.filter(user=user, topic=obj).first()
+
+        # Skip mastery computation for admins — they don't need it and it's expensive
+        if user.role == 'admin':
+            return None
+
+        # Use prefetched mastery cache if available (from prefetch_related in view)
+        if hasattr(obj, 'user_mastery_cache'):
+            mastery = obj.user_mastery_cache[0] if obj.user_mastery_cache else None
+        else:
+            # Fallback to direct query if not prefetched (backward compatibility)
+            mastery = LearnerTopicMastery.objects.filter(user=user, topic=obj).first()
         
         # Calculate lock reason if locked
         lock_reason = None
@@ -51,9 +75,24 @@ class TopicSerializer(serializers.ModelSerializer):
                 lock_reason = "this topic"
             else:
                 # 2. Check if locked by an ancestor
+                # Create mastery lookup cache once per serialization to avoid repeated queries
+                if not hasattr(self, '_mastery_cache'):
+                    self._mastery_cache = {}
+                
                 curr = obj.parent
                 while curr:
-                    anc_mastery = LearnerTopicMastery.objects.filter(user=user, topic=curr).first()
+                    # Check cache first
+                    if curr.id in self._mastery_cache:
+                        anc_mastery = self._mastery_cache[curr.id]
+                    elif hasattr(curr, 'user_mastery_cache'):
+                        # Use prefetched data
+                        anc_mastery = curr.user_mastery_cache[0] if curr.user_mastery_cache else None
+                        self._mastery_cache[curr.id] = anc_mastery
+                    else:
+                        # Fallback to query
+                        anc_mastery = LearnerTopicMastery.objects.filter(user=user, topic=curr).first()
+                        self._mastery_cache[curr.id] = anc_mastery
+                    
                     if anc_mastery and anc_mastery.is_locked:
                         lock_reason = f"ancestor '{curr.name}'"
                         break
@@ -85,6 +124,8 @@ class TopicCreateUpdateSerializer(serializers.ModelSerializer):
             'parent_id',
             'benchmark_hours',
             'difficulty',
+            'domain',
+            'language',
         ]
     
     def validate_name(self, value):
@@ -98,3 +139,59 @@ class TopicCreateUpdateSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("Benchmark hours cannot be negative")
         return value
+
+
+class TopicResourceSerializer(serializers.ModelSerializer):
+    """Serializer for YouTube video resources linked to topics."""
+
+    class Meta:
+        model = TopicResource
+        fields = [
+            'id', 'topic', 'title', 'url', 'youtube_video_id',
+            'channel_name', 'duration_minutes', 'view_count', 'like_count',
+            'thumbnail_url', 'description', 'generated_by',
+            'is_active', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_url(self, value):
+        if value and 'youtube.com' not in value and 'youtu.be' not in value:
+            raise serializers.ValidationError("URL must be a YouTube link")
+        return value
+
+
+class TopicResourceCreateSerializer(serializers.ModelSerializer):
+    """Serializer for admin manually adding a resource."""
+
+    class Meta:
+        model = TopicResource
+        fields = [
+            'title', 'url', 'youtube_video_id', 'channel_name',
+            'duration_minutes', 'view_count', 'like_count',
+            'thumbnail_url', 'description',
+        ]
+
+    def validate_url(self, value):
+        if value and 'youtube.com' not in value and 'youtu.be' not in value:
+            raise serializers.ValidationError("URL must be a YouTube link")
+        return value
+
+
+class TopicKnowledgeSerializer(serializers.ModelSerializer):
+    """Serializer for viewing/editing TopicKnowledge entries."""
+
+    class Meta:
+        model = TopicKnowledge
+        fields = [
+            'id', 'roadmap_id', 'section_id', 'section_name',
+            'topic_name', 'topic', 'benchmark_hours', 'difficulty',
+            'what_it_is', 'what_you_will_learn', 'subtopics',
+            'validation_keywords', 'version_hash', 'version',
+            'is_active', 'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'roadmap_id', 'section_id', 'section_name',
+            'topic_name', 'topic', 'version_hash', 'version',
+            'created_at', 'updated_at',
+        ]
+

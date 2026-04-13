@@ -10,3 +10,5 @@ langchain-ollama
 langgraph
 langchain
 django-celery-results
+chromadb==0.5.23
+youtube-search==2.2.0

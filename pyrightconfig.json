@@ -1,0 +1,21 @@
+{
+    "venvPath": "backend",
+    "venv": "venv",
+    "pythonVersion": "3.11",
+    "pythonPlatform": "Windows",
+    "include": [
+        "backend"
+    ],
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__"
+    ],
+    "reportMissingImports": true,
+    "reportMissingModuleSource": false,
+    "typeCheckingMode": "basic",
+    "plugins": [
+        {
+            "name": "mypy_django_plugin.main"
+        }
+    ]
+}

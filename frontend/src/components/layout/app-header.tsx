@@ -3,7 +3,8 @@
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks'
 import { logout } from '@/lib/store/slices/authSlice'
 import api from '@/lib/api'
-import { toggleTheme, toggleSidebar, setLeaveModalOpen } from '@/lib/store/slices/uiSlice'
+import { SidebarTrigger } from '@/components/ui/sidebar'
+import { toggleTheme, setLeaveModalOpen } from '@/lib/store/slices/uiSlice'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -19,7 +20,6 @@ import {
   BookOpen,
   Calendar,
   LogOut,
-  Menu,
   Moon,
   Sun,
   User,
@@ -39,18 +39,10 @@ export function AppHeader() {
     .slice(0, 2)
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="flex h-14 items-center gap-4 px-4">
-        {/* Mobile menu toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => dispatch(toggleSidebar())}
-        >
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle menu</span>
-        </Button>
+        {/* Mobile menu toggle via Shadcn */}
+        <SidebarTrigger className="-ml-1" />
 
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -120,7 +112,7 @@ export function AppHeader() {
               </Badge>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
               <User className="mr-2 h-4 w-4" />
               Profile Settings
             </DropdownMenuItem>

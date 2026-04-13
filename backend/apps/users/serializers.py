@@ -24,9 +24,9 @@ class UserSerializer(serializers.ModelSerializer):
             'full_name',
             'name',
             'github_url',
-            'expertise_level',
             'experience_years',
             'tech_stack',
+            'primary_domain',
             'role',
             'is_active',
             'is_superuser',
@@ -77,9 +77,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'password',
             'password_confirm',
             'github_url',
-            'expertise_level',
             'experience_years',
             'tech_stack',
+            'primary_domain',
             'role',
             'is_active',
         ]
@@ -183,15 +183,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'full_name',
             'name',
             'github_url',
-            'expertise_level',
             'experience_years',
             'tech_stack',
+            'primary_domain',
             'role',
+            'is_active',
             'is_superuser',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'email', 'role', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'email', 'role', 'is_active', 'created_at', 'updated_at']
 
     def get_name(self, obj):
         """Generate display name from full_name or email"""

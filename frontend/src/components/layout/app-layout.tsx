@@ -7,6 +7,7 @@ import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
 import { LeaveRequestModal } from '@/components/forms/leave-request-modal'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -25,18 +26,18 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-background">
-        <AppHeader />
-        <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
-          <AppSidebar />
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="relative flex min-h-screen flex-col bg-background">
+          <AppHeader />
           <main className="flex-1 overflow-auto">
             <div className="container py-6 px-4 md:px-6 lg:px-8 max-w-7xl">
               {children}
             </div>
           </main>
-        </div>
-        <LeaveRequestModal />
-      </div>
+          <LeaveRequestModal />
+        </SidebarInset>
+      </SidebarProvider>
     </ThemeProvider>
   )
 }

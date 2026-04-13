@@ -80,11 +80,13 @@ INSTALLED_APPS = [
     'apps.entries.apps.EntriesConfig',
     'apps.leaves.apps.LeavesConfig',
     'apps.audit',
+    'apps.reports',
     'django_celery_results',
 
 ]
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -252,3 +254,17 @@ CELERY_TASK_TIME_LIMIT = 90        # Hard kill at 90s (safety net)
 # Worker Stability - Keep it simple for solo pool
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1     # Only fetch 1 task at a time
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 100   # Restart after 100 tasks to prevent memory leaks
+
+# RAG / ChromaDB Configuration (AI Brain v7.0)
+CHROMA_PERSIST_DIR = BASE_DIR / 'chroma_db'
+CHROMA_TOPIC_COLLECTION = 'topic_knowledge'
+CHROMA_WISDOM_COLLECTION = 'admin_wisdom'
+OLLAMA_EMBED_MODEL = 'nomic-embed-text'
+OLLAMA_BASE_URL = 'http://localhost:11434'
+
+# YouTube Data API v3 (Topic Resource Generation)
+YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
+
+# Git Commit Analysis (Phase 2)
+ENABLE_GIT_VALIDATION = os.getenv('ENABLE_GIT_VALIDATION', 'False') == 'True'
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')  # Optional: raises rate limit from 60 → 5000 req/hr

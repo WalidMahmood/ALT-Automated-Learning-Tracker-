@@ -12,8 +12,8 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'admin':
-            return LeaveRequest.objects.exclude(status='cancelled')
-        return LeaveRequest.objects.filter(user=user)
+            return LeaveRequest.objects.select_related('user', 'admin_id').exclude(status='cancelled')
+        return LeaveRequest.objects.select_related('user', 'admin_id').filter(user=user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user, status='approved')

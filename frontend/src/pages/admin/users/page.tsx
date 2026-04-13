@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,7 +37,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Search, UserCog, BookOpen, Filter, Trash2, Plus, Mail, Shield, CheckCircle2, XCircle, Pencil } from 'lucide-react'
+import { MoreHorizontal, Search, UserCog, BookOpen, Filter, Trash2, Plus, Mail, Shield, CheckCircle2, XCircle, Pencil, FolderKanban } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { Navigate } from 'react-router-dom'
 import type { User, UserRole } from '@/lib/types'
@@ -45,6 +45,7 @@ import { UserProfileModal } from '@/components/admin/user-profile-modal'
 import { useMemo, useEffect } from 'react'
 import { fetchUsers, createUserThunk, updateUserThunk, deleteUserThunk } from '@/lib/store/slices/usersSlice'
 import { fetchTrainingPlans, assignPlanThunk } from '@/lib/store/slices/trainingPlansSlice'
+import { fetchAllProjects, assignUsersToProject } from '@/lib/store/slices/projectsSlice'
 import { toast } from 'sonner'
 import {
     AlertDialog,
@@ -62,6 +63,7 @@ export default function UsersPage() {
     const { user: currentUser } = useAppSelector((state) => state.auth)
     const { users } = useAppSelector((state) => state.users)
     const { plans } = useAppSelector((state) => state.trainingPlans)
+    const { projects } = useAppSelector((state) => state.projects)
 
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
@@ -70,6 +72,7 @@ export default function UsersPage() {
 
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [isAssignPlanOpen, setIsAssignPlanOpen] = useState(false)
+    const [isAssignProjectOpen, setIsAssignProjectOpen] = useState(false)
     const [isProfileOpen, setIsProfileOpen] = useState(false)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
@@ -79,6 +82,7 @@ export default function UsersPage() {
         if (currentUser?.role === 'admin') {
             dispatch(fetchUsers())
             dispatch(fetchTrainingPlans())
+            dispatch(fetchAllProjects({}))
         }
     }, [dispatch, currentUser])
 
@@ -96,7 +100,7 @@ export default function UsersPage() {
 
             // Needs fix: real assignments logic
             // Check both a.user_id and a.user.id for robustness
-            const assignedPlans = plans.filter(p => p.assignments?.some(a => (a.user_id || a.user?.id) === u.id))
+            const assignedPlans = plans.filter(p => (p as any).assignment_user_ids?.includes(u.id))
             const matchesPlan = planFilter === 'all' || assignedPlans.some(p => p.id === Number(planFilter))
 
             const matchesExp = expFilter === 'all' ||
@@ -108,14 +112,20 @@ export default function UsersPage() {
         })
     }, [searchQuery, statusFilter, planFilter, expFilter, users, plans])
 
+    const navigate = useNavigate()
+
     const handleAssignPlan = (user: User) => {
         setSelectedUser(user)
         setIsAssignPlanOpen(true)
     }
 
-    const handleViewProfile = (user: User) => {
+    const handleAssignProject = (user: User) => {
         setSelectedUser(user)
-        setIsProfileOpen(true)
+        setIsAssignProjectOpen(true)
+    }
+
+    const handleViewProfile = (user: User) => {
+        navigate(`/admin/users/${user.id}`)
     }
 
     const handleEditUser = (user: User) => {
@@ -251,9 +261,9 @@ export default function UsersPage() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            {plans.filter(p => p.assignments?.some(a => (a.user_id || a.user?.id) === learner.id)).length > 0 ? (
+                                            {plans.filter(p => (p as any).assignment_user_ids?.includes(learner.id)).length > 0 ? (
                                                 <div className="flex flex-wrap gap-1">
-                                                    {plans.filter(p => p.assignments?.some(a => (a.user_id || a.user?.id) === learner.id)).map(plan => (
+                                                    {plans.filter(p => (p as any).assignment_user_ids?.includes(learner.id)).map(plan => (
                                                         <Badge key={plan.id} variant="secondary" className="flex items-center gap-1 text-xs py-0 h-5 px-2 bg-primary/5 text-primary border-primary/20">
                                                             <BookOpen className="h-3 w-3" />
                                                             <span>{plan.plan_name}</span>
@@ -281,6 +291,10 @@ export default function UsersPage() {
                                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAssignPlan(learner); }}>
                                                         <UserCog className="mr-2 h-4 w-4" />
                                                         Assign Plan
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAssignProject(learner); }}>
+                                                        <FolderKanban className="mr-2 h-4 w-4" />
+                                                        Assign Project
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditUser(learner); }}>
                                                         <Pencil className="mr-2 h-4 w-4" />
@@ -316,6 +330,16 @@ export default function UsersPage() {
                     if (!open) setSelectedUser(null)
                 }}
                 user={selectedUser}
+            />
+
+            <AssignProjectDialog
+                open={isAssignProjectOpen}
+                onOpenChange={(open) => {
+                    setIsAssignProjectOpen(open)
+                    if (!open) setSelectedUser(null)
+                }}
+                user={selectedUser}
+                projects={projects}
             />
 
             <CreateUserDialog
@@ -385,6 +409,9 @@ function AssignPlanDialog({
                 planId: Number(selectedPlanId),
                 userIds: [user.id]
             })).unwrap()
+            // Refresh state so UI reflects the new assignment
+            dispatch(fetchTrainingPlans())
+            dispatch(fetchUsers())
             toast.success('Plan assigned successfully')
             onOpenChange(false)
         } catch (error: any) {
@@ -413,7 +440,7 @@ function AssignPlanDialog({
                             <SelectContent>
                                 {plans.map((plan) => (
                                     <SelectItem key={plan.id} value={plan.id.toString()}>
-                                        {plan.plan_name} ({plan.plan_topics?.length || 0} topics)
+                                        {plan.plan_name} ({(plan as any).topic_count ?? plan.plan_topics?.length ?? 0} topics)
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -426,6 +453,150 @@ function AssignPlanDialog({
                     </Button>
                     <Button onClick={handleAssign} disabled={!selectedPlanId || isSubmitting}>
                         {isSubmitting ? 'Assigning...' : 'Assign Plan'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function AssignProjectDialog({
+    open,
+    onOpenChange,
+    user,
+    projects,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    user: User | null
+    projects: import('@/lib/types').Project[]
+}) {
+    const dispatch = useAppDispatch()
+    const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([])
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [projectSearch, setProjectSearch] = useState('')
+
+    // Pre-select projects the user is already assigned to
+    useEffect(() => {
+        if (user && open) {
+            const assigned = projects
+                .filter(p => p.assigned_users?.some(u => u.id === user.id))
+                .map(p => p.id)
+            setSelectedProjectIds(assigned)
+            setProjectSearch('')
+        }
+    }, [user, open, projects])
+
+    const toggleProject = (id: number) => {
+        setSelectedProjectIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        )
+    }
+
+    const filteredProjects = projects.filter(p =>
+        !projectSearch || p.name.toLowerCase().includes(projectSearch.toLowerCase())
+    )
+
+    const handleAssign = async () => {
+        if (!user) return
+        setIsSubmitting(true)
+        try {
+            // For each selected project, ensure user is assigned
+            for (const pid of selectedProjectIds) {
+                const project = projects.find(p => p.id === pid)
+                if (!project) continue
+                const currentIds = project.assigned_users?.map(u => u.id) || []
+                if (!currentIds.includes(user.id)) {
+                    await dispatch(assignUsersToProject({
+                        projectId: pid,
+                        userIds: [...currentIds, user.id],
+                    })).unwrap()
+                }
+            }
+            // For each project user was in but is no longer selected, remove them
+            const previouslyAssigned = projects
+                .filter(p => p.assigned_users?.some(u => u.id === user.id))
+                .map(p => p.id)
+            for (const pid of previouslyAssigned) {
+                if (!selectedProjectIds.includes(pid)) {
+                    const project = projects.find(p => p.id === pid)
+                    if (!project) continue
+                    const newIds = (project.assigned_users?.map(u => u.id) || []).filter(id => id !== user.id)
+                    await dispatch(assignUsersToProject({
+                        projectId: pid,
+                        userIds: newIds,
+                    })).unwrap()
+                }
+            }
+            dispatch(fetchAllProjects({}))
+            toast.success('Project assignments updated')
+            onOpenChange(false)
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to update project assignments')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Assign Projects</DialogTitle>
+                    <DialogDescription>
+                        Select projects to assign to {user?.full_name || user?.name || user?.email}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search projects..."
+                            value={projectSearch}
+                            onChange={(e) => setProjectSearch(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto space-y-1 border rounded-lg p-2">
+                        {filteredProjects.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">No projects available</p>
+                        ) : (
+                            filteredProjects.map((project) => (
+                                <label
+                                    key={project.id}
+                                    className={`flex items-center gap-3 rounded-md p-2 cursor-pointer transition-colors ${selectedProjectIds.includes(project.id)
+                                        ? 'bg-primary/5 border border-primary/20'
+                                        : 'hover:bg-muted/30'
+                                        }`}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedProjectIds.includes(project.id)}
+                                        onChange={() => toggleProject(project.id)}
+                                        className="rounded border-gray-300"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{project.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {project.assigned_users?.length || 0} user(s) assigned
+                                        </p>
+                                    </div>
+                                    <Badge
+                                        variant="outline"
+                                        className={`text-xs ${project.is_completed ? 'bg-success/10 text-success' : 'bg-blue-500/10 text-blue-600'}`}
+                                    >
+                                        {project.is_completed ? 'Done' : 'Active'}
+                                    </Badge>
+                                </label>
+                            ))
+                        )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{selectedProjectIds.length} project(s) selected</p>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleAssign} disabled={isSubmitting}>
+                        {isSubmitting ? 'Saving...' : 'Save Assignments'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

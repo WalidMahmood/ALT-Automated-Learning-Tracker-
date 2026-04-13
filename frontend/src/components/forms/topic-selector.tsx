@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { mockTopics } from '@/lib/mock-data'
+import { useAppSelector } from '@/lib/store/hooks'
 import type { Topic } from '@/lib/types'
 
 interface TopicSelectorProps {
@@ -24,8 +24,9 @@ export function TopicSelector({ value, onChange, disabled }: TopicSelectorProps)
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentParentId, setCurrentParentId] = useState<number | null>(null)
+  const { topics } = useAppSelector(state => state.topics)
 
-  const activeTopics = useMemo(() => mockTopics.filter((t) => t.is_active), [])
+  const activeTopics = useMemo(() => topics.filter((t) => t.is_active), [topics])
 
   const getTopicPath = (topic: Topic) => {
     const path: string[] = []

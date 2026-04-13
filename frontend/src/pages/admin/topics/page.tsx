@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
     Dialog,
     DialogContent,
@@ -37,7 +38,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { BookOpen, MoreHorizontal, Plus, Search, Pencil, Trash2, ChevronRight, CornerDownRight, ChevronDown, Filter } from 'lucide-react'
+import { BookOpen, MoreHorizontal, Plus, Search, Pencil, Trash2, ChevronRight, CornerDownRight, ChevronDown, ChevronLeft, Filter } from 'lucide-react'
 import { mockEntries } from '@/lib/mock-data'
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks'
 import { deleteTopicThunk } from '@/lib/store/slices/topicsSlice'
@@ -46,6 +47,9 @@ import type { Topic } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { ParentTopicSelector } from '@/components/forms/parent-topic-selector'
 import api from '@/lib/api'
+import { TOPIC_DOMAINS } from '@/lib/constants'
+
+const ITEMS_PER_PAGE = 50
 
 export default function TopicsPage() {
     const dispatch = useAppDispatch()
@@ -57,6 +61,8 @@ export default function TopicsPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingTopic, setEditingTopic] = useState<Topic | null>(null)
     const [isFlatView, setIsFlatView] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
 
     // Fetch topics from API
     useEffect(() => {
@@ -66,6 +72,8 @@ export default function TopicsPage() {
                 setTopics(response.data)
             } catch (error) {
                 console.error('Failed to fetch topics:', error)
+            } finally {
+                setIsLoading(false)
             }
         }
         fetchTopics()
@@ -127,6 +135,45 @@ export default function TopicsPage() {
 
         return result
     }, [searchQuery, parentFilter, expandedNodes, topics])
+
+    // Pre-compute total hours map in O(n) using bottom-up traversal
+    const hoursMap = useMemo(() => {
+        const map = new Map<number, number>()
+        // Build children map
+        const childrenMap = new Map<number, number[]>()
+        for (const t of topics) {
+            map.set(t.id, Number(t.benchmark_hours) || 0)
+            if (t.parent_id) {
+                const siblings = childrenMap.get(t.parent_id) || []
+                siblings.push(t.id)
+                childrenMap.set(t.parent_id, siblings)
+            }
+        }
+        // Bottom-up: calculate total hours for each node
+        const calc = (id: number): number => {
+            const children = childrenMap.get(id)
+            if (!children || children.length === 0) return map.get(id) || 0
+            const total = (map.get(id) || 0) + children.reduce((sum, cid) => sum + calc(cid), 0)
+            map.set(id, total)
+            return total
+        }
+        // Only calculate for roots (nodes without parent or parent not in topics)
+        const topicIds = new Set(topics.map(t => t.id))
+        for (const t of topics) {
+            if (!t.parent_id || !topicIds.has(t.parent_id)) calc(t.id)
+        }
+        return map
+    }, [topics])
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(displayTopics.length / ITEMS_PER_PAGE))
+    const paginatedTopics = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE
+        return displayTopics.slice(start, start + ITEMS_PER_PAGE)
+    }, [displayTopics, currentPage])
+
+    // Reset to page 1 when filters change
+    useEffect(() => { setCurrentPage(1) }, [searchQuery, parentFilter, isFlatView])
 
     const rootTopics = useMemo(() => topics.filter(t => !t.parent_id), [topics])
 
@@ -253,120 +300,178 @@ export default function TopicsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {displayTopics.map((topic) => {
-                                    const topicEntries = mockEntries.filter(e => e.topic === topic.id)
-                                    const totalHours = topicEntries.reduce((sum, e) => sum + e.hours, 0)
-                                    const parent = topics.find(t => t.id === topic.parent_id)
-                                    const isExpanded = expandedNodes.has(topic.id)
+                                {isLoading ? (
+                                    Array.from({ length: 10 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                                            <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : paginatedTopics.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                            No topics found
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    paginatedTopics.map((topic) => {
+                                        const topicEntries = mockEntries.filter(e => e.topic === topic.id)
+                                        const totalHours = topicEntries.reduce((sum, e) => sum + e.hours, 0)
+                                        const parent = topics.find(t => t.id === topic.parent_id)
+                                        const isExpanded = expandedNodes.has(topic.id)
 
-                                    return (
-                                        <TableRow
-                                            key={topic.id}
-                                            className={cn(
-                                                !topic.is_active && "opacity-60 grayscale-[0.5]",
-                                                topic.level > 0 && "bg-muted/5 border-l-2 border-l-muted-foreground/10",
-                                                topic.hasChildren && !searchQuery && "cursor-pointer hover:bg-muted/50"
-                                            )}
-                                            onClick={() => topic.hasChildren && !searchQuery && toggleNode(topic.id)}
-                                        >
-                                            <TableCell className="font-medium">
-                                                <div className="flex items-center gap-2">
-                                                    <div style={{ marginLeft: `${topic.level * 24}px` }} className="flex items-center gap-2">
-                                                        {topic.hasChildren && !searchQuery ? (
-                                                            <div className="h-6 w-6 flex items-center justify-center">
-                                                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-6" />
-                                                        )}
-
-                                                        <div className="flex items-center gap-2">
-                                                            {topic.level > 0 && (
-                                                                <div className="flex items-center text-muted-foreground/50">
-                                                                    <CornerDownRight className="h-4 w-4" />
+                                        return (
+                                            <TableRow
+                                                key={topic.id}
+                                                className={cn(
+                                                    !topic.is_active && "opacity-60 grayscale-[0.5]",
+                                                    topic.level > 0 && "bg-muted/5 border-l-2 border-l-muted-foreground/10",
+                                                    topic.hasChildren && !searchQuery && "cursor-pointer hover:bg-muted/50"
+                                                )}
+                                                onClick={() => topic.hasChildren && !searchQuery && toggleNode(topic.id)}
+                                            >
+                                                <TableCell className="font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <div style={{ marginLeft: `${topic.level * 24}px` }} className="flex items-center gap-2">
+                                                            {topic.hasChildren && !searchQuery ? (
+                                                                <div className="h-6 w-6 flex items-center justify-center">
+                                                                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                                                 </div>
+                                                            ) : (
+                                                                <div className="w-6" />
                                                             )}
-                                                            <BookOpen className={cn("h-4 w-4", topic.level === 0 ? "text-primary" : "text-muted-foreground")} />
-                                                            <div className="flex flex-col">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span>{topic.name}</span>
-                                                                    {!topic.is_active && <Badge variant="outline" className="text-xs py-0 h-4 uppercase tracking-wider">Inactive</Badge>}
-                                                                </div>
-                                                                {(topic.path || (parent && !isExpanded && searchQuery)) && (
-                                                                    <span className="text-xs text-muted-foreground uppercase">
-                                                                        {topic.path ? `In ${topic.path}` : `Part of ${parent?.name}`}
-                                                                    </span>
+
+                                                            <div className="flex items-center gap-2">
+                                                                {topic.level > 0 && (
+                                                                    <div className="flex items-center text-muted-foreground/50">
+                                                                        <CornerDownRight className="h-4 w-4" />
+                                                                    </div>
                                                                 )}
+                                                                <BookOpen className={cn("h-4 w-4", topic.level === 0 ? "text-primary" : "text-muted-foreground")} />
+                                                                <div className="flex flex-col">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span>{topic.name}</span>
+                                                                        {!topic.is_active && <Badge variant="outline" className="text-xs py-0 h-4 uppercase tracking-wider">Inactive</Badge>}
+                                                                    </div>
+                                                                    {(topic.path || (parent && !isExpanded && searchQuery)) && (
+                                                                        <span className="text-xs text-muted-foreground uppercase">
+                                                                            {topic.path ? `In ${topic.path}` : `Part of ${parent?.name}`}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium">
-                                                        {(() => {
-                                                            const calculateTotalHours = (topicId: number): number => {
-                                                                const t = topics.find(t => t.id === topicId)
-                                                                const selfHours = t ? Number(t.benchmark_hours) : 0
-                                                                const children = topics.filter(t => t.parent_id === topicId)
-
-                                                                if (children.length === 0) {
-                                                                    return selfHours
-                                                                }
-                                                                return selfHours + children.reduce((sum, child) => sum + calculateTotalHours(child.id), 0)
-                                                            }
-                                                            return calculateTotalHours(topic.id)
-                                                        })()}h
-                                                    </span>
-                                                    {topics.some(t => t.parent_id === topic.id) && (
-                                                        <span className="text-xs text-muted-foreground">(calculated)</span>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="text-sm text-muted-foreground">
-                                                    {topicEntries.length} entries / {totalHours}h logged
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            className="h-8 w-8 p-0"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(topic); }}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            className="text-destructive"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                handleDelete(topic.id)
-                                                            }}
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium">
+                                                            {hoursMap.get(topic.id) ?? 0}h
+                                                        </span>
+                                                        {topics.some(t => t.parent_id === topic.id) && (
+                                                            <span className="text-xs text-muted-foreground">(calculated)</span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {topicEntries.length} entries / {totalHours}h logged
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                className="h-8 w-8 p-0"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <span className="sr-only">Open menu</span>
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(topic); }}>
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                className="text-destructive"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleDelete(topic.id)
+                                                                }}
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                )}
                             </TableBody>
                         </Table>
                     </div>
+                    {/* Pagination */}
+                    {!isLoading && totalPages > 1 && (
+                        <div className="flex items-center justify-between pt-4">
+                            <p className="text-xs text-muted-foreground">
+                                Page {currentPage} of {totalPages} ({displayTopics.length} items)
+                            </p>
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3"
+                                    disabled={currentPage <= 1}
+                                    onClick={() => setCurrentPage(p => p - 1)}
+                                >
+                                    <ChevronLeft className="h-4 w-4 mr-1" />
+                                    Previous
+                                </Button>
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let page: number
+                                    if (totalPages <= 5) {
+                                        page = i + 1
+                                    } else if (currentPage <= 3) {
+                                        page = i + 1
+                                    } else if (currentPage >= totalPages - 2) {
+                                        page = totalPages - 4 + i
+                                    } else {
+                                        page = currentPage - 2 + i
+                                    }
+                                    return (
+                                        <Button
+                                            key={page}
+                                            variant={currentPage === page ? 'default' : 'outline'}
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={() => setCurrentPage(page)}
+                                        >
+                                            {page}
+                                        </Button>
+                                    )
+                                })}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3"
+                                    disabled={currentPage >= totalPages}
+                                    onClick={() => setCurrentPage(p => p + 1)}
+                                >
+                                    Next
+                                    <ChevronRight className="h-4 w-4 ml-1" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -402,6 +507,8 @@ function TopicDialog({
         benchmark_hours: 0,
         difficulty: 3,
         parent_id: null,
+        domain: 'general',
+        language: '',
         ...topic
     })
 
@@ -414,6 +521,8 @@ function TopicDialog({
                 benchmark_hours: 0,
                 difficulty: 3,
                 parent_id: null,
+                domain: 'general',
+                language: '',
                 ...topic
             })
         }
@@ -479,6 +588,33 @@ function TopicDialog({
                         <p className="text-xs text-muted-foreground">
                             How challenging this topic is (affects AI time expectations)
                         </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="domain">Domain</Label>
+                            <Select
+                                value={formData.domain || 'general'}
+                                onValueChange={(value) => setFormData({ ...formData, domain: value })}
+                            >
+                                <SelectTrigger id="domain">
+                                    <SelectValue placeholder="Select domain" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {TOPIC_DOMAINS.map((d) => (
+                                        <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="language">Language / Primary Tool</Label>
+                            <Input
+                                id="language"
+                                value={formData.language || ''}
+                                onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                                placeholder="e.g., Python, React, AWS"
+                            />
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label>Parent Topic</Label>

@@ -43,7 +43,21 @@ export const fetchProjectDetail = createAsyncThunk(
 
 export const createProject = createAsyncThunk(
   'projects/createProject',
-  async (data: { name: string; description: string }, { rejectWithValue }) => {
+  async (data: {
+    name: string;
+    description: string;
+    key_modules?: string[];
+    out_of_scope?: string[];
+    tech_stack?: string;
+    tech_frontend?: string;
+    tech_backend?: string;
+    tech_database?: string;
+    tech_cloud?: string;
+    success_criteria?: string;
+    repo_url?: string;
+    start_date?: string | null;
+    end_date?: string | null;
+  }, { rejectWithValue }) => {
     try {
       const response = await api.post('/projects/', data)
       return response.data as Project
@@ -94,9 +108,41 @@ export const fetchAllProjects = createAsyncThunk(
   async (params: Record<string, any> = {}, { rejectWithValue }) => {
     try {
       const response = await api.get('/projects/all_projects/', { params })
-      return response.data as Project[]
+      // Handle both paginated and non-paginated responses
+      const data = Array.isArray(response.data) ? response.data : response.data.results
+      return data as Project[]
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch all projects')
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { projects } = getState() as { projects: ProjectsState }
+      return !projects.isLoading
+    },
+  }
+)
+
+export const assignUsersToProject = createAsyncThunk(
+  'projects/assignUsers',
+  async ({ projectId, userIds, roles }: { projectId: number; userIds: number[]; roles?: Record<number, string> }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/projects/${projectId}/assign_users/`, { user_ids: userIds, roles: roles || {} })
+      return response.data as Project
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to assign users')
+    }
+  }
+)
+
+export const removeUserFromProject = createAsyncThunk(
+  'projects/removeUser',
+  async ({ projectId, userId }: { projectId: number; userId: number }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/projects/${projectId}/remove_user/`, { user_id: userId })
+      return response.data as Project
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to remove user')
     }
   }
 )
@@ -170,6 +216,22 @@ const projectsSlice = createSlice({
       })
       // Toggle Complete
       .addCase(toggleProjectComplete.fulfilled, (state, action) => {
+        const idx = state.projects.findIndex((p) => p.id === action.payload.id)
+        if (idx !== -1) state.projects[idx] = action.payload
+        if (state.selectedProject?.id === action.payload.id) {
+          state.selectedProject = { ...state.selectedProject, ...action.payload }
+        }
+      })
+      // Assign Users
+      .addCase(assignUsersToProject.fulfilled, (state, action) => {
+        const idx = state.projects.findIndex((p) => p.id === action.payload.id)
+        if (idx !== -1) state.projects[idx] = action.payload
+        if (state.selectedProject?.id === action.payload.id) {
+          state.selectedProject = { ...state.selectedProject, ...action.payload }
+        }
+      })
+      // Remove User
+      .addCase(removeUserFromProject.fulfilled, (state, action) => {
         const idx = state.projects.findIndex((p) => p.id === action.payload.id)
         if (idx !== -1) state.projects[idx] = action.payload
         if (state.selectedProject?.id === action.payload.id) {

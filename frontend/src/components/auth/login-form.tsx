@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks'
 import api from '@/lib/api'
 import { loginStart, loginSuccess, loginFailure } from '@/lib/store/slices/authSlice'
+import { fetchDashboardStats } from '@/lib/store/slices/entriesSlice'
+import { fetchTopics } from '@/lib/store/slices/topicsSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,6 +33,16 @@ export function LoginForm() {
 
       const { user, access, refresh } = response.data
       dispatch(loginSuccess({ user, access, refresh }))
+
+      // Prefetch critical dashboard data for instant page load
+      if (user.role === 'admin') {
+        // Start fetching admin dashboard data immediately
+        dispatch(fetchDashboardStats(true))
+        dispatch(fetchTopics(true))
+      } else {
+        // Start fetching learner data
+        dispatch(fetchTopics(true))
+      }
 
       // Redirect all roles to dashboard (content adjusts based on role)
       navigate('/dashboard')

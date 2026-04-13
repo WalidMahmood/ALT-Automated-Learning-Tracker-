@@ -69,13 +69,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text='GitHub profile URL'
     )
     
-    expertise_level = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)],
-        blank=True,
-        null=True,
-        help_text='Self-assessed skill level 1-10'
-    )
-    
     experience_years = models.DecimalField(
         max_digits=3,
         decimal_places=1,
@@ -96,6 +89,46 @@ class User(AbstractBaseUser, PermissionsMixin):
         choices=ROLE_CHOICES,
         default='learner',
         help_text='User role: learner or admin'
+    )
+
+    DOMAIN_CHOICES = [
+        ('frontend', 'Frontend'),
+        ('backend', 'Backend'),
+        ('fullstack', 'Full Stack'),
+        ('devops', 'DevOps'),
+        ('devsecops', 'DevSecOps'),
+        ('mobile', 'Mobile'),
+        ('android', 'Android'),
+        ('ios', 'iOS'),
+        ('game', 'Game Developer'),
+        ('game_server', 'Server Side Game Developer'),
+        ('qa', 'QA'),
+        ('test_automation', 'Test Automation'),
+        ('data', 'Data Analyst'),
+        ('data_engineer', 'Data Engineer'),
+        ('ai', 'AI Engineer'),
+        ('ai_data_scientist', 'AI and Data Scientist'),
+        ('ml', 'Machine Learning'),
+        ('mlops', 'MLOps'),
+        ('bi', 'BI Analyst'),
+        ('blockchain', 'Blockchain'),
+        ('cyber_security', 'Cyber Security'),
+        ('architect', 'Software Architect'),
+        ('db_admin', 'PostgreSQL / DBA'),
+        ('product_manager', 'Product Manager'),
+        ('engineering_manager', 'Engineering Manager'),
+        ('design', 'UX Design'),
+        ('technical_writer', 'Technical Writer'),
+        ('devrel', 'Developer Relations'),
+        ('fundamentals', 'Computer Science / Fundamentals'),
+        ('soft_skills', 'Soft Skills'),
+        ('general', 'General'),
+    ]
+    primary_domain = models.CharField(
+        max_length=30,
+        choices=DOMAIN_CHOICES,
+        default='general',
+        help_text="User's primary area of focus"
     )
     
     # Soft delete fields
