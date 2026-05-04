@@ -24,6 +24,13 @@ import EntryDetailPage from '@/pages/admin/entries/detail'
 import HomePage from '@/pages/page'
 import ProfilePage from '@/pages/profile/page'
 
+// ── LND Dashboard Pages ─────────────────────────────────────────────
+import LndDashboardPage from '@/pages/admin/lnd/dashboard/page'
+import LndCoursesPage from '@/pages/admin/lnd/courses/page'
+import LndEmployeesPage from '@/pages/admin/lnd/employees/page'
+import LndMentorsPage from '@/pages/admin/lnd/mentors/page'
+import LndReportsPage from '@/pages/admin/lnd/reports/page'
+
 function App() {
     return (
         <RootLayout>
@@ -53,6 +60,14 @@ function App() {
                     <Route path="/admin/projects" element={<AdminProjectsPage />} />
                     <Route path="/admin/audit" element={<AuditLogsPage />} />
                     <Route path="/admin/audit/:id" element={<AuditLogDetailsPage />} />
+
+                    {/* ── L&D Planning Routes (Admin Only) ──────────── */}
+                    <Route path="/admin/lnd" element={<LndDashboardPage />} />
+                    <Route path="/admin/lnd/courses" element={<LndCoursesPage />} />
+                    <Route path="/admin/lnd/courses/:type/:status" element={<LndCoursesPage />} />
+                    <Route path="/admin/lnd/employees" element={<LndEmployeesPage />} />
+                    <Route path="/admin/lnd/mentors" element={<LndMentorsPage />} />
+                    <Route path="/admin/lnd/reports" element={<LndReportsPage />} />
                 </Routes>
             </AppLayout>
         </RootLayout>

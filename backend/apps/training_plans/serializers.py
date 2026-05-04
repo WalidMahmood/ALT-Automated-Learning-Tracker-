@@ -24,7 +24,7 @@ class PlanTopicEdgeWriteSerializer(serializers.Serializer):
 class PlanTopicSerializer(serializers.ModelSerializer):
     """Serializer for plan topics with topic details"""
     topic = TopicSerializer(read_only=True)
-    topic_id = serializers.IntegerField()
+    topic_id = serializers.IntegerField(required=False, allow_null=True)
     
     class Meta:
         model = PlanTopic
@@ -36,19 +36,30 @@ class PlanTopicSerializer(serializers.ModelSerializer):
             'sequence_order',
             'expected_hours',
             'node_type',
+            # LND Bridge fields
+            'source',
+            'lms_course_id',
+            'lms_course_name',
         ]
         read_only_fields = ['id', 'plan_id']
 
 
 class PlanTopicWriteSerializer(serializers.Serializer):
-    """Serializer for writing plan topics"""
-    topic_id = serializers.IntegerField()
+    """Serializer for writing plan topics (curated or LMS)"""
+    topic_id = serializers.IntegerField(required=False, allow_null=True)
     sequence_order = serializers.IntegerField(default=1)
     expected_hours = serializers.DecimalField(max_digits=5, decimal_places=1)
     node_type = serializers.ChoiceField(
         choices=[('topic', 'Topic'), ('section', 'Section Header')],
         default='topic'
     )
+    # LND Bridge fields
+    source = serializers.ChoiceField(
+        choices=[('curated', 'Curated'), ('lms', 'LMS')],
+        default='curated'
+    )
+    lms_course_id = serializers.IntegerField(required=False, allow_null=True)
+    lms_course_name = serializers.CharField(required=False, default='')
 
 
 class PlanAssignmentSerializer(serializers.ModelSerializer):

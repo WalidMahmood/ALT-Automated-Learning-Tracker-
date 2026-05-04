@@ -27,6 +27,7 @@ import {
     Loader2,
     BookOpen,
     Clock,
+    Building2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -430,6 +431,46 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Organization Info (ERP Fields) — only show when populated */}
+            {(profileUser as any).employee_id && (
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            Organization Info
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {[
+                                { label: 'Employee ID', value: (profileUser as any).employee_id },
+                                { label: 'Department', value: (profileUser as any).department },
+                                { label: 'Designation', value: (profileUser as any).designation },
+                                { label: 'SBU', value: (profileUser as any).sbu_name },
+                                { label: 'ERP Role', value: (profileUser as any).erp_role },
+                                { label: 'Joining Date', value: (profileUser as any).joining_date ? format(new Date((profileUser as any).joining_date), 'dd MMM yyyy') : null },
+                                { label: 'Expertise', value: (profileUser as any).expertise },
+                                { label: 'Expertise Level', value: (profileUser as any).expertise_level },
+                                { label: 'Training Level', value: (profileUser as any).training_level },
+                                { label: 'Interview Count', value: (profileUser as any).interview_count },
+                                { label: 'Mentor', value: (profileUser as any).mentor },
+                            ].filter(f => f.value).map((field) => (
+                                <div key={field.label} className="space-y-1">
+                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{field.label}</p>
+                                    <p className="text-sm font-medium">{String(field.value)}</p>
+                                </div>
+                            ))}
+                        </div>
+                        {(profileUser as any).notes && (
+                            <div className="mt-4 pt-4 border-t space-y-1">
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Notes</p>
+                                <p className="text-sm">{(profileUser as any).notes}</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Tech Stack */}
             <Card className="overflow-visible">

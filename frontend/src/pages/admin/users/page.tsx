@@ -37,7 +37,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Search, UserCog, BookOpen, Filter, Trash2, Plus, Mail, Shield, CheckCircle2, XCircle, Pencil, FolderKanban } from 'lucide-react'
+import { MoreHorizontal, Search, UserCog, BookOpen, Filter, Trash2, Plus, Mail, Shield, CheckCircle2, XCircle, Pencil, FolderKanban, Building2 } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks'
 import { Navigate } from 'react-router-dom'
 import type { User, UserRole } from '@/lib/types'
@@ -46,6 +46,7 @@ import { useMemo, useEffect } from 'react'
 import { fetchUsers, createUserThunk, updateUserThunk, deleteUserThunk } from '@/lib/store/slices/usersSlice'
 import { fetchTrainingPlans, assignPlanThunk } from '@/lib/store/slices/trainingPlansSlice'
 import { fetchAllProjects, assignUsersToProject } from '@/lib/store/slices/projectsSlice'
+import { ERPImportDialog } from '@/components/lnd/erp-import-dialog'
 import { toast } from 'sonner'
 import {
     AlertDialog,
@@ -77,6 +78,7 @@ export default function UsersPage() {
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
+    const [isERPImportOpen, setIsERPImportOpen] = useState(false)
 
     useEffect(() => {
         if (currentUser?.role === 'admin') {
@@ -158,10 +160,16 @@ export default function UsersPage() {
                         Manage learners and assign training plans
                     </p>
                 </div>
-                <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Create User
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => setIsERPImportOpen(true)} className="gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Import from ERP
+                    </Button>
+                    <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Create User
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -381,6 +389,12 @@ export default function UsersPage() {
                     if (!open) setSelectedUser(null)
                 }}
                 user={selectedUser}
+            />
+
+            <ERPImportDialog
+                open={isERPImportOpen}
+                onOpenChange={setIsERPImportOpen}
+                onUserCreated={() => dispatch(fetchUsers())}
             />
         </div>
 

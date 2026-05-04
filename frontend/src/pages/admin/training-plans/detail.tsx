@@ -41,6 +41,8 @@ import { useAppSelector } from '@/lib/store/hooks'
 import api from '@/lib/api'
 import type { TrainingPlan, PlanTopic, Topic, Entry } from '@/lib/types'
 import { toast } from 'sonner'
+import { LMSCoursesTab } from '@/components/lnd/lms-courses-tab'
+import { PlanApprovalPanel } from '@/components/lnd/plan-approval-panel'
 
 // ─── Roadmap Section Colors ───────────────────────────────
 const SECTION_COLORS = [
@@ -842,6 +844,11 @@ export default function TrainingPlanDetailPage() {
                 </Card>
             )}
 
+            {/* Plan Approval Workflow */}
+            {isView && plan && (
+                <PlanApprovalPanel planId={plan.id} planName={plan.plan_name} />
+            )}
+
             {/* Topics — Edit mode: flat list with add/remove; View mode: roadmap graph */}
             {!isView && (
                 <Card>
@@ -1008,6 +1015,36 @@ export default function TrainingPlanDetailPage() {
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* LMS Courses Tab — Edit mode only */}
+            {!isView && (
+                <LMSCoursesTab
+                    existingLmsCourseIds={
+                        (formData.plan_topics || [])
+                            .filter((pt: any) => pt.source === 'lms' && pt.lms_course_id)
+                            .map((pt: any) => pt.lms_course_id)
+                    }
+                    onAddCourse={(course) => {
+                        const currentPlanTopics = formData.plan_topics || []
+                        const nextSequence = currentPlanTopics.length + 1
+                        const newPt = {
+                            topic_id: null,
+                            topic: null,
+                            expected_hours: 8, // default for LMS courses
+                            sequence_order: nextSequence,
+                            node_type: 'topic',
+                            source: 'lms',
+                            lms_course_id: course.id,
+                            lms_course_name: course.fullname,
+                        } as any
+                        setFormData({
+                            ...formData,
+                            plan_topics: [...currentPlanTopics, newPt],
+                        })
+                    }}
+                    editable={true}
+                />
             )}
 
             {/* Roadmap Graph — View mode only */}

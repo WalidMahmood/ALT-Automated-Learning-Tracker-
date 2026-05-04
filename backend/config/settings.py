@@ -83,6 +83,10 @@ INSTALLED_APPS = [
     'apps.reports',
     'django_celery_results',
 
+    # LND Dashboard Integration (sidecar proxy + data bridges)
+    'apps.lnd_proxy',
+    'apps.lnd_bridge',
+
 ]
 
 MIDDLEWARE = [

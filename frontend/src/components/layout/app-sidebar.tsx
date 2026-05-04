@@ -14,6 +14,9 @@ import {
   Users,
   ShieldAlert,
   BarChart3,
+  GraduationCap,
+  BookOpen,
+  ChevronDown,
 } from 'lucide-react'
 
 interface NavItem {
@@ -97,8 +100,12 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -198,6 +205,47 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   )
                 })}
+
+                {/* ── L&D Planning Collapsible Sub-menu ── */}
+                {user?.role === 'admin' && (
+                  <Collapsible defaultOpen={pathname.startsWith('/admin/lnd')} className="group/lnd">
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton
+                          isActive={pathname.startsWith('/admin/lnd')}
+                          tooltip="L&D Planning"
+                        >
+                          <GraduationCap className="h-4 w-4" />
+                          <span>L&D Planning</span>
+                          <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/lnd:rotate-180" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {[
+                            { title: 'L&D Dashboard', href: '/admin/lnd', icon: <BarChart3 className="h-3.5 w-3.5" /> },
+                            { title: 'Courses', href: '/admin/lnd/courses', icon: <BookOpen className="h-3.5 w-3.5" /> },
+                            { title: 'Employees', href: '/admin/lnd/employees', icon: <Users className="h-3.5 w-3.5" /> },
+                            { title: 'Mentors', href: '/admin/lnd/mentors', icon: <GraduationCap className="h-3.5 w-3.5" /> },
+                            { title: 'L&D Reports', href: '/admin/lnd/reports', icon: <FileText className="h-3.5 w-3.5" /> },
+                          ].map((sub) => (
+                            <SidebarMenuSubItem key={sub.href}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={pathname === sub.href || (sub.href !== '/admin/lnd' && pathname.startsWith(sub.href))}
+                              >
+                                <Link to={sub.href} onClick={handleNavigation}>
+                                  {sub.icon}
+                                  <span>{sub.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

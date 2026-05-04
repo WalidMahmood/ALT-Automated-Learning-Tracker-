@@ -18,6 +18,10 @@ urlpatterns = [
     path('api/leaves/', include('apps.leaves.urls')),
     path('api/reports/', include('apps.reports.urls')),
     path('api/audit/', include('apps.audit.urls')),
+
+    # LND Dashboard Integration
+    path('api/lnd/', include('apps.lnd_proxy.urls')),          # Proxy → FastAPI sidecar on port 8001
+    path('api/lnd-bridge/', include('apps.lnd_bridge.urls')),  # Data bridges (ERP users, LMS courses, approvals)
 ]
 
 # Serve media files in development

@@ -131,6 +131,82 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text="User's primary area of focus"
     )
     
+    # ── LND Bridge / ERP Fields ──────────────────────────────────────────
+    # Populated when an admin imports a user from ERP via the LND bridge.
+    # All nullable so existing users are unaffected.
+    employee_id = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text='ERP Employee ID (e.g. BS0733). Unique across all users.'
+    )
+    department = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Department from ERP (e.g. Software Engineering)'
+    )
+    designation = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Job position from ERP (e.g. Senior Software Engineer)'
+    )
+    sbu_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Strategic Business Unit name from ERP'
+    )
+    erp_role = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Organizational role from ERP (e.g. Project Manager, Developer)'
+    )
+    joining_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date the employee joined the organization (from ERP)'
+    )
+    expertise = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text='Area of expertise (self-editable)'
+    )
+    expertise_level = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text='Expertise level: Beginner, Intermediate, Advanced, Expert'
+    )
+    training_level = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text='Current training level (self-editable)'
+    )
+    interview_count = models.IntegerField(
+        default=0,
+        help_text='Number of interviews conducted/taken'
+    )
+    mentor = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='mentees',
+        help_text='Assigned mentor (FK to another User)'
+    )
+    notes = models.TextField(
+        blank=True,
+        default='',
+        help_text='Admin notes about this user'
+    )
+    # ── End LND Bridge Fields ────────────────────────────────────────────
+
     # Soft delete fields
     is_active = models.BooleanField(
         default=True,

@@ -57,7 +57,16 @@ class TrainingPlan(models.Model):
 class PlanTopic(models.Model):
     """
     Many-to-many relationship between plans and topics with ordering.
+    
+    Supports two source types:
+    - 'curated': Traditional ALTS topic from the roadmap (topic FK required)
+    - 'lms': LMS course from Moodle via LND bridge (lms_course_id required, topic FK nullable)
     """
+    SOURCE_CHOICES = [
+        ('curated', 'Curated Roadmap Topic'),
+        ('lms', 'LMS Course (Moodle)'),
+    ]
+
     plan = models.ForeignKey(
         TrainingPlan,
         on_delete=models.CASCADE,
@@ -66,7 +75,10 @@ class PlanTopic(models.Model):
     topic = models.ForeignKey(
         Topic,
         on_delete=models.RESTRICT,
-        related_name='plan_topics'
+        related_name='plan_topics',
+        null=True,
+        blank=True,
+        help_text="ALTS topic (required for curated, null for LMS courses)"
     )
     sequence_order = models.IntegerField(default=1)
     expected_hours = models.DecimalField(
@@ -81,14 +93,35 @@ class PlanTopic(models.Model):
         help_text="Type of node in the roadmap graph"
     )
 
+    # ── LND Bridge Fields ────────────────────────────────────────────
+    source = models.CharField(
+        max_length=10,
+        choices=SOURCE_CHOICES,
+        default='curated',
+        help_text="Where this plan item came from"
+    )
+    lms_course_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Moodle course ID (only for source='lms')"
+    )
+    lms_course_name = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text="Cached LMS course name for display"
+    )
+    # ── End LND Bridge Fields ────────────────────────────────────────
+
     class Meta:
         ordering = ['sequence_order']
-        unique_together = ['plan', 'topic']
         verbose_name = 'Plan Topic'
         verbose_name_plural = 'Plan Topics'
 
     def __str__(self):
-        return f"{self.plan.plan_name} - {self.topic.name}"
+        if self.source == 'lms':
+            return f"{self.plan.plan_name} - [LMS] {self.lms_course_name}"
+        return f"{self.plan.plan_name} - {self.topic.name if self.topic else '(no topic)'}"
 
 
 class PlanAssignment(models.Model):

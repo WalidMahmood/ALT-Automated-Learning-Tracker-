@@ -7,6 +7,7 @@ import trainingPlansReducer from './slices/trainingPlansSlice'
 import leaveRequestsReducer from './slices/leaveRequestsSlice'
 import projectsReducer from './slices/projectsSlice'
 import uiReducer from './slices/uiSlice'
+import lndDashboardReducer from './slices/lndDashboardSlice'
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,8 @@ export const store = configureStore({
     leaveRequests: leaveRequestsReducer,
     projects: projectsReducer,
     ui: uiReducer,
+    // LND Integration
+    lndDashboard: lndDashboardReducer,
   },
 })
 

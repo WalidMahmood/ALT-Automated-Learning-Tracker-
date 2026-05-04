@@ -32,6 +32,19 @@ class UserSerializer(serializers.ModelSerializer):
             'is_superuser',
             'created_at',
             'updated_at',
+            # LND Bridge / ERP fields
+            'employee_id',
+            'department',
+            'designation',
+            'sbu_name',
+            'erp_role',
+            'joining_date',
+            'expertise',
+            'expertise_level',
+            'training_level',
+            'interview_count',
+            'mentor',
+            'notes',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -82,6 +95,18 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'primary_domain',
             'role',
             'is_active',
+            # LND Bridge / ERP fields (set during ERP import)
+            'employee_id',
+            'department',
+            'designation',
+            'sbu_name',
+            'erp_role',
+            'joining_date',
+            'expertise',
+            'expertise_level',
+            'training_level',
+            'mentor',
+            'notes',
         ]
         read_only_fields = ['id', 'is_active']
     
@@ -191,8 +216,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'is_superuser',
             'created_at',
             'updated_at',
+            # LND Bridge / ERP fields
+            'employee_id',
+            'department',
+            'designation',
+            'sbu_name',
+            'erp_role',
+            'joining_date',
+            'expertise',
+            'expertise_level',
+            'training_level',
+            'interview_count',
+            'mentor',
+            'notes',
         ]
-        read_only_fields = ['id', 'email', 'role', 'is_active', 'created_at', 'updated_at']
+        # ERP-sourced fields are read-only for learners; admin edits via admin panel
+        read_only_fields = [
+            'id', 'email', 'role', 'is_active', 'created_at', 'updated_at',
+            'employee_id', 'department', 'designation', 'sbu_name', 'erp_role', 'joining_date',
+        ]
 
     def get_name(self, obj):
         """Generate display name from full_name or email"""
